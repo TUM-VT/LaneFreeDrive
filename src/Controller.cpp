@@ -2,38 +2,58 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-// 23:42 2022 07 23
 #ifdef __unix__
 #include "LaneFree_linux.h"
 #elif defined(WIN32)
-#include <LaneFree_win.h>
+#include <LaneFree.h>
 #include "libLaneFreePlugin_Export.h"
 #endif
 
 #define CONTROLLER_H
 #include "Controller.h"
+#include <iostream>
 
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))
 #define MIN(a, b) (((a) <= (b))?(a):(b))
 
-#define UPPER 9.1
-#define LOWER 1.1
-
 #define MIN_DESIRED_SPEED 25
 #define MAX_DESIRED_SPEED 35
-#define verordnungsindex 0.07
+#define MIN_DESIRED_SPEED_E 40
+#define MAX_DESIRED_SPEED_E 42
+#define verordnungsindex_normal 0.12
+#define verordnungsindex_emergency 0.05
 
-#define PI 3.1415926
+#define kp_pl 0.3
+#define kp_pl0 0.12
 
-#define kp1 0.15 //The Kp for longitudinal desired speed force
-#define kp2 0.4 //The Kp for lateral deceleration
-#define kp_boundary 0.7 //The Kp for boundary forces
-#define FORCE_INDEX 1 //The index for controlling strength of forces
-#define kd_boundary 0.7
+#define PI 3.14159265358979323846
+
+#define kp1 0.3
+#define kp2 0.65
+#define kp_boundary 0.55
+#define kd_boundary 0.2
+#define FORCE_INDEX 2
 
 #define WALL_DN(point, safety, v, yi, wi) U_lemma3( -(safety)*v, MAX(0, yi-0.5*wi - (point)), -sim->uymax_hard)
 #define WALL_UP(point, safety, v, yi, wi) U_lemma3( +(safety)*v, MAX(0, (point) - (yi+0.5*wi)), -sim->uymax_hard)
+
+#define UPPER_ramp 2.1
+#define LOWER_ramp 1.9
+
+#define UPPER_LONG 9.0
+#define LOWER_LONG 1.2
+
+#define UPPER_OFF 13
+#define LOWER_OFF 1.2
+
+#define UPPER_ON 13
+#define LOWER_ON 1.2
+
+#define mu1 28.0
+#define sigma1 1.0
+#define mu2 32.0
+#define sigma2 1.0
 
 static double U_lemma3
 (double v, double d, double ubar) {
@@ -117,6 +137,81 @@ double relative_distance(NumericalID ego_id, NumericalID neighbor_id) {
 	return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 };
 
+double Kp_pl_ramp(double pos_x, double pos_y, NumericalID ids_ego, NumericalID ids_edge) {
+	double kp_va{};
+	double beg_pos{};
+	char* edge_name = get_edge_name(ids_edge);
+	char* type_name = get_veh_type_name(ids_ego);
+	double Wr = 10.2;
+	double Wveh = 2.4;
+
+	if (strcmp(edge_name, "E2") == 0) {
+		if (pos_y > 4.0) {
+			beg_pos = 800;
+			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+		}
+		else
+		{
+			kp_va = kp_pl0;
+		}
+	}
+	else if (strcmp(edge_name, "E4") == 0) {
+		if (pos_y < 4.0) {
+			beg_pos = 2000;
+			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+		}
+		else
+		{
+			kp_va = kp_pl0;
+		}
+	}
+	else if (strcmp(edge_name, "E10") == 0) {
+		if (pos_y > 4.0) {
+			beg_pos = 6800;
+			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+		}
+		else
+		{
+			kp_va = kp_pl0;
+		}
+	} 
+	else if (strcmp(edge_name, "E12") == 0) {
+		if (pos_y < 4.0) {
+			beg_pos = 7960;
+			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+		}
+		else
+		{
+			kp_va = kp_pl0;
+		}
+	}
+	else if (strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0) {
+		
+		if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) { // Off-ramp
+			if (pos_y > 4.0) {
+				beg_pos = 5000;
+				kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+			}
+			else
+			{
+				kp_va = kp_pl0;
+			}
+		}
+
+		if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0) { // On-ramp
+			if (pos_y < 4.0) {
+				beg_pos = 4660;
+				kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
+			}
+			else
+			{
+				kp_va = kp_pl0;
+			}
+		}
+	}
+	return kp_va;
+}
+
 void calculation_forces
 (double &fi, NumericalID ids_in_edge, NumericalID front_neighbors,int n, int p, int q, double a, double b) {
 	double pos_x = get_position_x(ids_in_edge);
@@ -140,16 +235,9 @@ void determin_forces_nudging
 	double position_y = get_position_y(ids_in_edge);
 	double ob_position_x = get_position_x(back_neighbors);
 	double ob_position_y = get_position_y(back_neighbors);
-
 	double x_diff = fabs(position_x - ob_position_x);
 	double y_diff = fabs(position_y - ob_position_y);
-
 	double theta = atan(y_diff / x_diff);
-
-
-	//printf("ego-obs postion: (%f,%f) degree!\n", x_diff, y_diff);
-	//printf("The position angle: %f degree!\n", theta * 180 / PI);
-	//double theta = atan2(y_diff, x_diff) * 180 / PI;
 	if (ob_position_y >= position_y) {
 		fxi = fi * cos(theta);
 		fyi = -fi * sin(theta);
@@ -168,17 +256,9 @@ void determin_forces_repulsive
 	double position_y = get_position_y(ids_in_edge);
 	double ob_position_x = get_position_x(front_neighbors);
 	double ob_position_y = get_position_y(front_neighbors);
-
 	double x_diff = ob_position_x - position_x;
 	double y_diff = ob_position_y - position_y;
-
 	double theta = atan(y_diff/x_diff);
-
-	//printf("The position angle: %f degree!\n", theta * 180 / PI);
-	
-	//double theta = atan2(y_diff, x_diff) * 180 / PI;
-	//printf("The value of theta: %f degree!\n", theta * 180 / PI);
-
 	fxi = -fi * cos(theta);
 	fyi = -fi * sin(theta);
 }
@@ -188,249 +268,499 @@ void target_speed_forces
 {
 	double cur_speed_x = get_speed_x(ids_in_edge);
 	double cur_speed_y = get_speed_y(ids_in_edge);
-
 	double target_speed = 1.1 * cur_speed_x;
-
 	double control_speed = MIN(target_speed, vd);
-
 	ax_desired = kp1 * (control_speed - cur_speed_x);
 	ay_desired = -kp2 * cur_speed_y;
 }
 
 double upper_boundary_forces
-(double fy, NumericalID ids_in_edge) 
+(double fy, NumericalID ids_in_edge, double mid_point, double UPPER)
 {
 	double fy_control_upper{ 0 }, error_bound{ 0 }, bound_force{ 0 };
-
-	double mid_point = (UPPER + LOWER) * 0.5;
+	double vy = get_speed_y(ids_in_edge);
 	double position_y = get_position_y(ids_in_edge);
-
 	char* veh_name = get_vehicle_name(ids_in_edge);
-	//printf("The lateral position of %s: %f\n", veh_name, position_y);
-
 	error_bound = UPPER - position_y;
-	bound_force = kp_boundary * error_bound;
-	//printf("The boundary force and fy of %s: (%f , %f)\n", veh_name, bound_force, fy);
-
+	bound_force = kp_boundary * error_bound - kd_boundary * vy;
 	fy_control_upper = MIN(fy, bound_force);
-	//printf("The control force of %s: %f\n", veh_name, fy_control_upper);
-
 	return fy_control_upper;
 }
 
 double lower_boundary_forces
-(double fy, NumericalID ids_in_edge)
+(double fy, NumericalID ids_in_edge, double mid_point, double LOWER)
 {
 	double fy_control_lower{ 0 }, error_bound{ 0 }, bound_force{ 0 };
-
-	double mid_point = (UPPER + LOWER) * 0.5;
+	double vy = get_speed_y(ids_in_edge);
 	double position_y = get_position_y(ids_in_edge);
-
 	char* veh_name = get_vehicle_name(ids_in_edge);
-	//printf("The lateral position of %s: %f\n", veh_name, position_y);
-
 	error_bound = LOWER - position_y;
-	bound_force = kp_boundary * error_bound;
-	//printf("The boundary force and fy of %s: (%f , %f)\n", veh_name, bound_force, fy);
-
+	bound_force = kp_boundary * error_bound - kd_boundary * vy;
 	fy_control_lower = MAX(fy, bound_force);
-	//printf("The control force of %s: %f\n", veh_name, fy_control_lower);
-
 	return fy_control_lower;
 }
 
-void add
-(int *p) 
-{
-	*p = *p * +1;
-}
-
 void overtake
-(NumericalID ids_ego, NumericalID ids_obs) {
+(NumericalID ids_ego, NumericalID ids_obs, int UPPER, int LOWER) {
 	double mid_point = (UPPER + LOWER) * 0.5;
 	double pos_ego_y = get_position_y(ids_ego);
 	double pos_obs_y = get_position_y(ids_obs);
-
 	double pos_ego_x = get_position_x(ids_ego);
 	double pos_obs_x = get_position_x(ids_obs);
-
 	int desired_speed_ego = get_desired_speed(ids_ego);
 	int desired_speed_obs = get_desired_speed(ids_obs);
-	
 	int diff_desired = desired_speed_ego - desired_speed_obs;
 	double fabs_y = fabs(pos_ego_y - pos_obs_y);
 	double fabs_x = fabs(pos_ego_x - pos_obs_x);
-	
-		
-	//if (diff_desired < 0) {printf("1. In!!!\n");}
-	//if (fabs_y < 1) { printf("2. In!!!\n"); }
-	//if (fabs_x < 40) { printf("3. In!!!\n"); }
 
 	if (desired_speed_ego < desired_speed_obs && fabs(pos_ego_y - pos_obs_y) < 1 && fabs(pos_ego_x - pos_obs_x) < 40) {
 		if (pos_ego_x > mid_point) {
 			char* name_ego = get_vehicle_name(ids_ego);
-			//printf("The vehicle %s will be pushed downward!\n", name_ego);
 			apply_acceleration(ids_ego, 0, -1);
 		}
 		else {
 			char* name_obs = get_vehicle_name(ids_ego);
-			//printf("The vehicle %s will be pushed upward!\n", name_obs);
 			apply_acceleration(ids_obs, 0, 1);
 		}
 	}
 }
 
-double verkehrsordnungskraft
-(NumericalID ids_ego) {
+double UPPER_boundary(NumericalID ids_ego, NumericalID ids_edge) {
+	double UPPER_boundary{};
+	char* edge_name = get_edge_name(ids_edge);
+	char* type_name = get_veh_type_name(ids_ego);
+	double edge_width = get_edge_width(ids_edge);
+
+	if (strcmp(edge_name, "E1") == 0 || strcmp(edge_name, "E3") == 0 || strcmp(edge_name, "E5") == 0
+		|| strcmp(edge_name, "E9") == 0 || strcmp(edge_name, "E11") == 0
+		|| strcmp(edge_name, "E13") == 0 || strcmp(edge_name, ":J31_0") == 0 || strcmp(edge_name, ":J19_0") == 0 
+		|| strcmp(edge_name, ":J19_1") == 0 || strcmp(edge_name, ":J6_0") == 0 || strcmp(edge_name, ":J21_0") == 0
+		|| strcmp(edge_name, ":J5_1") == 0 || strcmp(edge_name, ":J27_1") == 0 || strcmp(edge_name, ":J29_0") == 0 || strcmp(edge_name, ":J1_1") == 0
+		|| strcmp(edge_name, ":J11_0") == 0 || strcmp(edge_name, ":J10_1") == 0 || strcmp(edge_name, ":J2_0") == 0) {
+		UPPER_boundary = UPPER_LONG;
+	}
+	else if (strcmp(edge_name, "E2") == 0 || strcmp(edge_name, "E10") == 0 || strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0
+		|| strcmp(edge_name, ":J2_0") == 0 || strcmp(edge_name, ":J19_0") == 0 || strcmp(edge_name, ":J24_0") == 0) {
+		UPPER_boundary = UPPER_OFF;
+	}
+	else if (strcmp(edge_name, "E4") == 0 || strcmp(edge_name, "E12") == 0 || strcmp(edge_name, "E6") == 0) {
+		UPPER_boundary = UPPER_ON;
+	}
+	else if (strcmp(edge_name, "R1") == 0 || strcmp(edge_name, "R4") == 0 || strcmp(edge_name, "R5") == 0 
+		|| strcmp(edge_name, ":J3_0") == 0 || strcmp(edge_name, ":J4_0") == 0 || strcmp(edge_name, ":J20_0") == 0 || strcmp(edge_name, ":J25_0") == 0) {
+		UPPER_boundary = UPPER_ramp;
+	}
+	else if (strcmp(edge_name, "E7") == 0) {
+		UPPER_boundary = UPPER_ON;
+	}
+
+	return UPPER_boundary;
+}
+
+double LOWER_boundary(NumericalID ids_ego, NumericalID ids_edge) {
+	double LOWER_boundary{};
+	char* edge_name = get_edge_name(ids_edge);
+	char* type_name = get_veh_type_name(ids_ego);
+	
+	if (strcmp(edge_name, "E1") == 0 || strcmp(edge_name, "E3") == 0 || strcmp(edge_name, "E5") == 0 
+		|| strcmp(edge_name, "E9") == 0 || strcmp(edge_name, "E11") == 0 
+		|| strcmp(edge_name, "E13") == 0 || strcmp(edge_name, ":J31_0") == 0 || strcmp(edge_name, ":J19_0") == 0 
+		|| strcmp(edge_name, ":J19_1") == 0 || strcmp(edge_name, ":J6_0") == 0 || strcmp(edge_name, ":J21_0") == 0
+		|| strcmp(edge_name, ":J5_1") == 0 || strcmp(edge_name, ":J27_1") == 0 || strcmp(edge_name, ":J29_0") == 0 || strcmp(edge_name, ":J1_1") == 0
+		|| strcmp(edge_name, ":J11_0") == 0 || strcmp(edge_name, ":J10_1") == 0 || strcmp(edge_name, ":J2_0") == 0
+		|| strcmp(edge_name, "E8") == 0)
+	{
+		LOWER_boundary = LOWER_LONG;
+	}
+	
+	if (strcmp(edge_name, "E2") == 0) 
+	{
+		if (strcmp(type_name, "lane_free_car_1") == 0) {
+			LOWER_boundary = LOWER_OFF;
+		}
+		else
+		{
+			LOWER_boundary = LOWER_OFF + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E8") == 0) {
+		if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0 || strcmp(type_name, "lane_free_car_8") == 0) {
+			LOWER_boundary = LOWER_OFF;
+		}
+		else
+		{
+			LOWER_boundary = LOWER_OFF + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E10") == 0) {
+		if (strcmp(type_name, "lane_free_car_3") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_9") == 0) {
+			LOWER_boundary = LOWER_OFF;
+		}
+		else
+		{
+			LOWER_boundary = LOWER_OFF + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E4") == 0) {
+		if (strcmp(type_name, "lane_free_car_5") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_7") == 0) {
+			LOWER_boundary = LOWER_ON;
+		}
+		else {
+			LOWER_boundary = LOWER_ON + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E12") == 0) {
+		if (strcmp(type_name, "lane_free_car_11") == 0) {
+			LOWER_boundary = LOWER_ON;
+		}
+		else {
+			LOWER_boundary = LOWER_ON + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E6") == 0) {
+		if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0) 
+		{
+			LOWER_boundary = LOWER_OFF;
+		}
+		else
+		{
+			LOWER_boundary = LOWER_OFF + 4;
+		}
+	}
+
+	if (strcmp(edge_name, "E7") == 0) {
+		if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) {
+			LOWER_boundary = LOWER_OFF;
+		}
+		if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0)
+		{
+			LOWER_boundary = LOWER_OFF;
+		}
+		else
+		{
+			LOWER_boundary = LOWER_OFF + 4;
+		}
+	}
+
+	if (strcmp(type_name, "lane_free_car_8") == 0) {
+			LOWER_boundary = LOWER_OFF;
+	}
+
+
+	//Ramp sections (off)
+	else if (strcmp(edge_name, "R1") == 0 || strcmp(edge_name, "R4") == 0 || strcmp(edge_name, "R5") == 0
+		|| strcmp(edge_name, ":J3_0") == 0 || strcmp(edge_name, ":J4_0") == 0 || strcmp(edge_name, ":J20_0") == 0 || strcmp(edge_name, ":J25_0") == 0) {
+		LOWER_boundary = LOWER_ramp;
+	}
+
+	return LOWER_boundary;
+}
+
+double resetvd(NumericalID ids_ego, NumericalID ids_edge){
+	char* edge_name = get_edge_name(ids_edge);
+	char* type_name = get_veh_type_name(ids_ego);
+	double y_init = get_position_y(ids_ego);
+	double road_width = get_edge_width(ids_edge);
+	double v_width = get_veh_width(ids_ego);
+
+	if (y_init >= 4.0){
+		if (strcmp(edge_name, "E2") == 0)
+		{
+			if (strcmp(type_name, "lane_free_car_1") == 0)
+			{
+				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 7;
+				set_desired_speed(ids_ego, v_desired-1);
+			}
+		}
+
+		if (strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0)
+		{
+			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0)
+			{
+				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 8;
+				set_desired_speed(ids_ego, v_desired);
+			}
+		}
+	
+		if (strcmp(edge_name, "E10") == 0)
+		{
+			if (strcmp(type_name, "lane_free_car_3") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_9") == 0)
+			{
+			
+				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 7;
+				set_desired_speed(ids_ego, v_desired);
+			}
+		}
+	}
+	else if (y_init >= 4) {
+		set_desired_speed(ids_ego, (double)MIN_DESIRED_SPEED);
+	}
+	return 0;
+}
+
+bool emergency_range(double emergency_location, double emergency_speed, double position_x, NumericalID id_ego) {
+	bool index{};
+	double safty_range_front = 250;
+	double safty_range_back = 20;
+
+	char* vtype = get_veh_type_name(id_ego);
+	double pos_diff = abs(emergency_location - position_x);
+	
+	index = false;
+	return index;
+}
+
+double box_muller(double mu, double sigma) {
+	double u1 = rand() / (double)RAND_MAX;
+	double u2 = rand() / (double)RAND_MAX;
+
+	double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * PI * u2);
+	return z0 * sigma + mu;
+}
+
+double generate_desired_speed() {
+
+	double random_num;
+	double speed;
+
+	do {
+		if (rand() % 2 == 0) {
+			random_num = box_muller(mu1, sigma1);
+		}
+		else {
+			random_num = box_muller(mu2, sigma2);
+		}
+
+		speed = random_num;
+	} while (speed < 25 || speed > 35);
+
+	return speed;
+}
+
+double mixed_normal_pdf(double x) {
+	double coef1 = 1.0 / (sigma1 * sqrt(2.0 * PI));
+	double coef2 = 1.0 / (sigma2 * sqrt(2.0 * PI));
+	double exp1 = exp(-0.5 * pow((x - mu1) / sigma1, 2));
+	double exp2 = exp(-0.5 * pow((x - mu2) / sigma2, 2));
+
+	return 0.5 * (coef1 * exp1 + coef2 * exp2);
+}
+
+double mixed_normal_cdf(double x) {
+	double lower_bound = 25.0;
+	double upper_bound = x;
+	int num_intervals = 1000;
+	double interval_width = (upper_bound - lower_bound) / num_intervals;
+
+	double cdf = 0.0;
+	for (int i = 0; i < num_intervals; i++) {
+		double x1 = lower_bound + i * interval_width;
+		double x2 = x1 + interval_width;
+		double y1 = mixed_normal_pdf(x1);
+		double y2 = mixed_normal_pdf(x2);
+
+		cdf += 0.5 * (y1 + y2) * interval_width;
+	}
+	return cdf;
+}
+
+double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, double UPPER, bool emergency) {
+	double target_line{};
+	double UPPER_lower{};
+	double LOWER_higher{};
 	double vd = get_desired_speed(ids_ego);
+	double vy = get_speed_y(ids_ego);
+	double ky = 0.05;
+	double pos_x = get_global_position_x(ids_ego);
+	double pos_y = get_position_y(ids_ego);
+	double verordnungsindex = verordnungsindex_normal;
+
+	double cdf_value = mixed_normal_cdf(vd);
 
 	double co = vd - (double)MIN_DESIRED_SPEED;
 	double areas = (double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED;
 
-	double target_line = LOWER + ((UPPER - LOWER) / areas) * co;
+	char* edge_name = get_edge_name(ids_edge);
+	char* type_name = get_veh_type_name(ids_ego);
 
-	//printf("Co: %f\nAreas number: %f\n", co, areas);
+	if (strcmp(edge_name, "E2") == 0)
+	{
+		if (strcmp(type_name, "lane_free_car_1") == 0)
+		{
+			UPPER_lower = UPPER - 11;
+			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+		}
+		else
+		{
+			if (emergency) {
+				UPPER_lower = UPPER - 2.5;
+				LOWER_higher = LOWER + 1;
+			}
+			else {
+				UPPER_lower = UPPER;
+				LOWER_higher = LOWER + 1;
+			}
 
-	double pos_y = get_position_y(ids_ego);
+		}
+	}
+
+	if (strcmp(edge_name, "E10") == 0)
+	{
+		if (strcmp(type_name, "lane_free_car_3") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_9") == 0)
+		{
+			UPPER_lower = UPPER - 11;
+			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+		}
+		else
+		{
+			if (emergency) {
+				UPPER_lower = UPPER - 2.5;
+				LOWER_higher = LOWER + 1;
+			}
+			else
+			{
+				UPPER_lower = UPPER;
+				LOWER_higher = LOWER + 1;
+			}
+
+		}
+	}
+
+	if (strcmp(edge_name, "E4") == 0)
+	{
+		if (strcmp(type_name, "lane_free_car_5") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_7") == 0)
+		{
+			LOWER_higher = LOWER + 4;
+			UPPER_lower = UPPER;
+			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+		}
+		else
+		{
+			if (emergency) {
+				LOWER_higher = LOWER + 4.5;
+				UPPER_lower = UPPER - 2.5;
+			}
+			else
+			{
+				LOWER_higher = LOWER + 4.5;
+				UPPER_lower = UPPER;
+			}
+
+		}
+	}
+
+	if (strcmp(edge_name, "E12") == 0)
+	{
+		if (strcmp(type_name, "lane_free_car_11") == 0)
+		{
+			LOWER_higher = LOWER + 4;
+			UPPER_lower = UPPER;
+			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+		}
+		else
+		{
+			if (emergency) {
+				UPPER_lower = UPPER - 2.5;
+				LOWER_higher = LOWER + 4.5;
+			}
+			else {
+				UPPER_lower = UPPER;
+				LOWER_higher = LOWER + 4.5;
+			}
+		}
+	}
+
+	if (strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0)
+	{
+		if (strcmp(edge_name, "E6") == 0)
+		{
+			if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0)
+				{
+					LOWER_higher = LOWER + 6;
+					UPPER_lower = UPPER;
+					verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+				}
+		}
+	
+		else if (strcmp(edge_name, "E8") == 0) {
+			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) {
+				UPPER_lower = UPPER - 11;
+				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+			}
+		}
+
+		else if (strcmp(edge_name, "E7") == 0) {
+			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) {
+				UPPER_lower = UPPER - 11;
+				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+			}
+			else if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0) {
+				LOWER_higher = LOWER + 6;
+				UPPER_lower = UPPER;
+				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
+			}
+		}
+
+		if (strcmp(type_name, "lane_free_car_8") == 0) {
+			UPPER_lower = UPPER - 11.5;
+			LOWER_higher = LOWER;
+			verordnungsindex = verordnungsindex_normal;
+		}else {
+			if (emergency) {
+				UPPER_lower = UPPER - 2.5;
+				LOWER_higher = LOWER + 1;
+			}
+			else
+			{
+				UPPER_lower = UPPER;
+			}
+		}
+	}
+
+	if (strcmp(edge_name, "E1") == 0 || strcmp(edge_name, "E3") == 0 || strcmp(edge_name, "E5") == 0 || strcmp(edge_name, "E9") == 0 || strcmp(edge_name, "E11") == 0
+		|| strcmp(edge_name, "E13") == 0 
+		
+		|| strcmp(edge_name, ":J19_0") == 0 || strcmp(edge_name, ":J6_0") == 0 || strcmp(edge_name, ":J19_1") == 0 || strcmp(edge_name, ":J11_0") == 0 
+		|| strcmp(edge_name, ":J5_1") == 0  || strcmp(edge_name, ":J1_1") == 0 || strcmp(edge_name, ":J27_1") == 0 || strcmp(edge_name, ":J29_0") == 0 
+		|| strcmp(edge_name, ":J10_1") == 0 || strcmp(edge_name, ":J2_0") == 0)
+	{
+		if (emergency) {
+			LOWER_higher = LOWER;
+			UPPER_lower = UPPER - 2.5;
+		}
+		else {
+			LOWER_higher = LOWER;
+			UPPER_lower = UPPER;
+		}
+	}
+
+	if (strcmp(type_name, "lane_free_car_12") == 0)
+	{
+		verordnungsindex = verordnungsindex_emergency;
+		if (strcmp(edge_name, "E2") == 0 || strcmp(edge_name, "E4") == 0 || strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 ||
+			strcmp(edge_name, "E8") == 0 || strcmp(edge_name, "E10") == 0 || strcmp(edge_name, "E12") == 0) {
+			target_line = 12.9;
+		}
+		else
+		{
+			target_line = 8.9;
+		}
+	}
+	else {
+		double UPPER_new = MIN(UPPER_lower, UPPER);
+		printf("UPPER_new: %f\n", UPPER_new);
+		double LOWER_new = MAX(LOWER_higher, LOWER);
+		printf("LOWER_new: %f\n", LOWER_new);
+		target_line = LOWER_new + cdf_value * (UPPER_new - LOWER_new);
+	}
+
 	char* name = get_vehicle_name(ids_ego);
-	double ordnungskraft = verordnungsindex * (target_line - pos_y);
-	//printf("The desired speed and target line of vehicle %s are: (%f, %f) \nOrdnungskraft: %f\n", name, vd, target_line, ordnungskraft);
+	double ordnungskraft = verordnungsindex * (target_line - pos_y) - ky * vy;
+	printf("The vehicle %s in type %s has desired speed and target line: (%f, %f) \nOrdnungskraft: %f\n", name, type_name, vd, target_line, ordnungskraft);
 	return ordnungskraft;
 }
-
-/*void maintain_gap(NumericalID ego_id, NumericalID front_neighbors, double target_gap)
-{
-
-	double current_gap = relative_distance(ego_id, front_neighbors);
-
-	double gap_error = current_gap = relative_distance(ego_id, front_neighbors);
-	double force = kp_boundary * gap_error;
-
-	double a_desired = force;
-	apply_acceleration(ego_id, a_desired, 0);
-}*/
-
-void maintain_gap(NumericalID ego_id, NumericalID front_neighbor, double target_gap) {
-	double current_gap = get_relative_distance_x(ego_id, front_neighbor);
-	double ego_speed = get_speed_x(ego_id);
-	double front_speed = get_speed_x(front_neighbor);
-
-	// Calculate the relative velocity
-	double relative_velocity = ego_speed - front_speed;
-
-	// Calculate the desired acceleration based on the gap error and relative velocity
-	double gap_error = target_gap - current_gap;
-	double acceleration = kp_boundary * gap_error - kd_boundary * relative_velocity;
-
-	// Apply the calculated acceleration to the ego vehicle
-	apply_acceleration(ego_id, acceleration, 0);
-}
-
-/*void initialize_y_speed
-(double speed_y, double TS, NumericalID front_neighbors) {
-	printf("Initializing the lateral speed...\n");
-	double fyii = -(speed_y)/TS;
-	printf("The speed_y, TS and initializing acceleration are: (%f,%f,%f) \n", speed_y, TS, fyii);
-	
-	apply_acceleration(0, fyii, front_neighbors);
-
-	double ini_speed = get_speed_y(front_neighbors);
-	
-	if (ini_speed != 0) {
-		printf("The speed_y cannot be initialized!\n");
-	}
-	else {
-		printf("The speed_y was successfully initialized!\n");
-	}
-}
-*/
-
-/*
-void regulate_forces
-(sim_t* sim, NumericalID edge_id, NumericalID veh_id, double* fx, double* fy) {
-	// y wall 
-	double fxi = *fx, fyi = *fy;
-	if (sim->dynamic_y_walls) {
-		double uy_max = sim->walls.y.bound_up;
-		double uy_min = sim->walls.y.bound_dn;
-		if (uy_max >= -uy_min) {
-			fyi = MAX(fyi, -uy_min);
-			fyi = MIN(fyi, +uy_max);
-		}
-	}
-
-	double vx = get_speed_x(veh_id), vd = get_desired_speed(veh_id), vy = get_speed_y(veh_id);
-	double yi = get_position_y(veh_id), wi = get_veh_width(veh_id);
-	double roadwid_meters = get_edge_width(edge_id);
-	double T = get_time_step_length();
-
-	//keeping vehicles within the road
-	fyi = MAX(fyi, -WALL_DN(0, 1.05, vy, yi, wi));
-	fyi = MIN(fyi, +WALL_UP(roadwid_meters, 1.05, vy, yi, wi));
-
-	//x wall 
-	if (sim->dynamic_x_walls && sim->walls.x.leader != -1) {
-		if (sim->walls.x.bound < fxi) {
-			fxi = sim->walls.x.bound;
-			sim->reg++;
-		}
-	}
-
-	//[umin, umax] ranges
-	fxi = MIN(fxi, sim->uxmax_hard);
-	fxi = MAX(fxi, sim->uxmin_hard);
-
-	fyi = MIN(fyi, +sim->uymax_hard);
-	fyi = MAX(fyi, -sim->uymax_hard);
-
-	//non-negative speed
-	fxi = MAX(fxi, -vx / T);
-
-	//non-excessive speed
-	fxi = MIN(fxi, (sim->vd_alpha * vd - vx) / T);
-
-	// lat. speed never exceeds 0.5 x lon. speed, i.e.
-	// enforcing: |vy[k+1]| <= 0.5 vx[k+1]
-	//
-	fyi = MIN(fyi, +(0.5 * vx - vy) / T);
-	fyi = MAX(fyi, -(0.5 * vx + vy) / T);
-
-	//single-lane exceptions
-	if (sim->single_lane)
-		fyi = 0;
-
-	*fx = fxi;
-	*fy = fyi;
-}
-*/
-
-/*
-
-double x_acceleration(double forces_i, double pos_x, double pos_y, double ob_position_x, double ob_position_y) {
-	double x_diff = fabs(pos_x - ob_position_x);
-	double y_diff = fabs(pos_y - ob_position_y);
-	double PI = 3.1415926;
-	double x_acceleration;
-	double theta = atan2(y_diff, x_diff) * 180 / PI;
-	if (pos_x <= ob_position_x) {
-		return fabs(forces_i * cos(theta));
-	}
-	else {
-		return -fabs(forces_i * cos(theta));
-	}
-}
-
-double y_acceleration(double forces_i, double pos_x, double pos_y, double ob_position_x, double ob_position_y) {
-	double x_diff = fabs(pos_x - ob_position_x);
-	double y_diff = fabs(pos_y - ob_position_y);
-	double PI = 3.1415926;
-	double y_acceleration;
-	double theta = atan2(y_diff, x_diff) * 180 / PI;
-	if (pos_y <= ob_position_y) {
-		return fabs(forces_i * sin(theta));
-	}
-	else {
-		return -fabs(forces_i * sin(theta));
-	}
-}
-*/

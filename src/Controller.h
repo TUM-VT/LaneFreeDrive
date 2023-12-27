@@ -56,6 +56,12 @@ typedef struct
 //	double posx = 0;
 //}Position;
 
+typedef struct
+{
+	long current_location = 0;
+	double current_speed = 0;
+}EmergencyVehicleLocation;
+
 typedef struct {
 	int j;
 	double mag;
@@ -157,19 +163,33 @@ void determin_forces_repulsive
 
 void target_speed_forces (double& ax_desired, double& ay_desired, NumericalID ids_in_edge, double vd);
 
-double upper_boundary_forces(double fy, NumericalID ids_in_edge);
+double upper_boundary_forces(double fy, NumericalID ids_in_edge, double mid_point, double UPPER);
 //void initialize_y_speed(double speed_y, double TS, NumericalID front_neighbors);
 
-double lower_boundary_forces(double fy, NumericalID ids_in_edge);
+double lower_boundary_forces(double fy, NumericalID ids_in_edge, double mid_point, double LOWER);
 
-void add(int* p);
+//void add(int* p);
 
-void overtake(NumericalID ids_ego, NumericalID ids_obs);
+//void overtake(NumericalID ids_ego, NumericalID ids_obs);
 //void regulate_forces(sim_t* sim, NumericalID edge_id, NumericalID veh_id, double* fx, double* fy);
 
-double verkehrsordnungskraft(NumericalID ids_ego);
+double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, double UPPER, bool emergency);
 
-void maintain_gap(NumericalID ego_id, NumericalID front_neighbors, double target_gap);
+double UPPER_boundary(NumericalID ids_ego, NumericalID ids_edge);
+
+double LOWER_boundary(NumericalID ids_ego, NumericalID ids_edge);
+
+double resetvd(NumericalID ids_ego, NumericalID ids_edge);
+
+bool emergency_range(double emergency_location, double emergency_speed, double position_x, NumericalID id_ego);
+
+//double rand_normal(double mean, double stddev);
+
+double box_muller(double mu, double sigma);
+
+double generate_desired_speed();
+
+double Kp_pl_ramp(double pos_x, double pos_y, NumericalID ids_ego, NumericalID ids_edge);
 
 // this is how you can define static variables
 EXTERN_C int example_extern_variable_static;

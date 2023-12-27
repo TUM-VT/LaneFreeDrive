@@ -204,7 +204,3 @@ EXTERN libLaneFreePlugin_EXPORT void event_vehicles_collide(NumericalID veh_id1,
 
 //is called when a vehicle exceeds the road boundaries
 EXTERN libLaneFreePlugin_EXPORT void event_vehicle_out_of_bounds(NumericalID veh_id);
-
-
-
-
