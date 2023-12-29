@@ -462,6 +462,10 @@ double LOWER_boundary(NumericalID ids_ego, NumericalID ids_edge) {
 }
 
 double resetvd(NumericalID ids_ego, NumericalID ids_edge){
+	/*
+	Currently, the function hard codes the modified speeds by looking at vehicle types. 
+	The vehicle types are used as means to distinguish vehicle destinations (on-ramp or off-ramp).
+	*/ 
 	char* edge_name = get_edge_name(ids_edge);
 	char* type_name = get_veh_type_name(ids_ego);
 	double y_init = get_position_y(ids_ego);
@@ -542,6 +546,9 @@ double generate_desired_speed() {
 	return speed;
 }
 
+/* The underlying probability density function used for generating potential lines.
+* At the moment, it uses a combintation of two guassian distributions, representing fast- and slow-moving vehicles
+*/
 double mixed_normal_pdf(double x) {
 	double coef1 = 1.0 / (sigma1 * sqrt(2.0 * PI));
 	double coef2 = 1.0 / (sigma2 * sqrt(2.0 * PI));
@@ -551,6 +558,10 @@ double mixed_normal_pdf(double x) {
 	return 0.5 * (coef1 * exp1 + coef2 * exp2);
 }
 
+/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
+* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
+* It uses the Trapezoidal rule for integration.
+*/
 double mixed_normal_cdf(double x) {
 	double lower_bound = 25.0;
 	double upper_bound = x;
@@ -569,6 +580,9 @@ double mixed_normal_cdf(double x) {
 	return cdf;
 }
 
+/* Currently, the upperand lower bounds for different vehiclesand edge types are hard coded.
+The target line for emergency vehicle is also hard-coded.
+*/
 double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, double UPPER, bool emergency) {
 	double target_line{};
 	double UPPER_lower{};
@@ -739,6 +753,7 @@ double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, d
 		}
 	}
 
+	// Following condition forces specific target line for emergency vehicle
 	if (strcmp(type_name, "lane_free_car_12") == 0)
 	{
 		verordnungsindex = verordnungsindex_emergency;
