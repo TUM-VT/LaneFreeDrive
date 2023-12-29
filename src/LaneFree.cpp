@@ -255,7 +255,7 @@ void simulation_step() {
 					fy = ay_desired + NUDGING_INDEX * fy_nudging + REPULSIVE_INDEX * fy_repulsive + ordnungskraft;
 				}
 
-
+				// Add the forces for the boundary
 				double fy_control{ 0 };
 				double fy_control_upper = upper_boundary_forces(fy, ids_in_edge[j], mid, UPPER);
 				double fy_control_lower = lower_boundary_forces(fy, ids_in_edge[j], mid, LOWER);

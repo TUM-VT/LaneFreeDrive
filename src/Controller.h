@@ -163,9 +163,11 @@ void determin_forces_repulsive
 
 void target_speed_forces (double& ax_desired, double& ay_desired, NumericalID ids_in_edge, double vd);
 
+// Implements the forces for the upper boundary
 double upper_boundary_forces(double fy, NumericalID ids_in_edge, double mid_point, double UPPER);
 //void initialize_y_speed(double speed_y, double TS, NumericalID front_neighbors);
 
+// Implements the forces for the lower boundary
 double lower_boundary_forces(double fy, NumericalID ids_in_edge, double mid_point, double LOWER);
 
 //void add(int* p);
