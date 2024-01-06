@@ -35,3 +35,5 @@ if(WIN32)
 	    STATIC_DEFINE libLaneFreePlugin_BUILT_AS_STATIC
 	)
 endif()
+
+target_compile_features(libLaneFreePlugin PRIVATE cxx_std_17)
