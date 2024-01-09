@@ -125,81 +125,6 @@ double relative_distance(NumericalID ego_id, NumericalID neighbor_id) {
 	return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
 };
 
-double Kp_pl_ramp(double pos_x, double pos_y, NumericalID ids_ego, NumericalID ids_edge) {
-	double kp_va{};
-	double beg_pos{};
-	char* edge_name = get_edge_name(ids_edge);
-	char* type_name = get_veh_type_name(ids_ego);
-	double Wr = 10.2;
-	double Wveh = 2.4;
-
-	if (strcmp(edge_name, "E2") == 0) {
-		if (pos_y > 4.0) {
-			beg_pos = 800;
-			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-		}
-		else
-		{
-			kp_va = kp_pl0;
-		}
-	}
-	else if (strcmp(edge_name, "E4") == 0) {
-		if (pos_y < 4.0) {
-			beg_pos = 2000;
-			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-		}
-		else
-		{
-			kp_va = kp_pl0;
-		}
-	}
-	else if (strcmp(edge_name, "E10") == 0) {
-		if (pos_y > 4.0) {
-			beg_pos = 6800;
-			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-		}
-		else
-		{
-			kp_va = kp_pl0;
-		}
-	} 
-	else if (strcmp(edge_name, "E12") == 0) {
-		if (pos_y < 4.0) {
-			beg_pos = 7960;
-			kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-		}
-		else
-		{
-			kp_va = kp_pl0;
-		}
-	}
-	else if (strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0) {
-		
-		if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) { // Off-ramp
-			if (pos_y > 4.0) {
-				beg_pos = 5000;
-				kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-			}
-			else
-			{
-				kp_va = kp_pl0;
-			}
-		}
-
-		if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0) { // On-ramp
-			if (pos_y < 4.0) {
-				beg_pos = 4660;
-				kp_va = kp_pl * ((pos_x - beg_pos) / 200 * (pos_y / (Wr - Wveh))) + kp_pl0;
-			}
-			else
-			{
-				kp_va = kp_pl0;
-			}
-		}
-	}
-	return kp_va;
-}
-
 void calculation_forces
 (double &fi, NumericalID ids_in_edge, NumericalID front_neighbors,int n, int p, int q, double a, double b) {
 	double pos_x = get_position_x(ids_in_edge);
@@ -454,169 +379,20 @@ double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, d
 	char* edge_name = get_edge_name(ids_edge);
 	char* type_name = get_veh_type_name(ids_ego);
 
-	if (strcmp(edge_name, "E2") == 0)
-	{
-		if (strcmp(type_name, "lane_free_car_1") == 0)
-		{
-			UPPER_lower = UPPER - 11;
-			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-		}
-		else
-		{
-			if (emergency) {
-				UPPER_lower = UPPER - 2.5;
-				LOWER_higher = LOWER + 1;
-			}
-			else {
-				UPPER_lower = UPPER;
-				LOWER_higher = LOWER + 1;
-			}
-
-		}
+	if (emergency) {
+		LOWER_higher = LOWER;
+		UPPER_lower = UPPER - 2.5;
 	}
-
-	if (strcmp(edge_name, "E10") == 0)
-	{
-		if (strcmp(type_name, "lane_free_car_3") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_9") == 0)
-		{
-			UPPER_lower = UPPER - 11;
-			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-		}
-		else
-		{
-			if (emergency) {
-				UPPER_lower = UPPER - 2.5;
-				LOWER_higher = LOWER + 1;
-			}
-			else
-			{
-				UPPER_lower = UPPER;
-				LOWER_higher = LOWER + 1;
-			}
-
-		}
-	}
-
-	if (strcmp(edge_name, "E4") == 0)
-	{
-		if (strcmp(type_name, "lane_free_car_5") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_7") == 0)
-		{
-			LOWER_higher = LOWER + 4;
-			UPPER_lower = UPPER;
-			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-		}
-		else
-		{
-			if (emergency) {
-				LOWER_higher = LOWER + 4.5;
-				UPPER_lower = UPPER - 2.5;
-			}
-			else
-			{
-				LOWER_higher = LOWER + 4.5;
-				UPPER_lower = UPPER;
-			}
-
-		}
-	}
-
-	if (strcmp(edge_name, "E12") == 0)
-	{
-		if (strcmp(type_name, "lane_free_car_11") == 0)
-		{
-			LOWER_higher = LOWER + 4;
-			UPPER_lower = UPPER;
-			verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-		}
-		else
-		{
-			if (emergency) {
-				UPPER_lower = UPPER - 2.5;
-				LOWER_higher = LOWER + 4.5;
-			}
-			else {
-				UPPER_lower = UPPER;
-				LOWER_higher = LOWER + 4.5;
-			}
-		}
-	}
-
-	if (strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0)
-	{
-		if (strcmp(edge_name, "E6") == 0)
-		{
-			if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0)
-				{
-					LOWER_higher = LOWER + 6;
-					UPPER_lower = UPPER;
-					verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-				}
-		}
-	
-		else if (strcmp(edge_name, "E8") == 0) {
-			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) {
-				UPPER_lower = UPPER - 11;
-				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-			}
-		}
-
-		else if (strcmp(edge_name, "E7") == 0) {
-			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0) {
-				UPPER_lower = UPPER - 11;
-				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-			}
-			else if (strcmp(type_name, "lane_free_car_9") == 0 || strcmp(type_name, "lane_free_car_10") == 0) {
-				LOWER_higher = LOWER + 6;
-				UPPER_lower = UPPER;
-				verordnungsindex = Kp_pl_ramp(pos_x, pos_y, ids_ego, ids_edge);
-			}
-		}
-
-		if (strcmp(type_name, "lane_free_car_8") == 0) {
-			UPPER_lower = UPPER - 11.5;
-			LOWER_higher = LOWER;
-			verordnungsindex = verordnungsindex_normal;
-		}else {
-			if (emergency) {
-				UPPER_lower = UPPER - 2.5;
-				LOWER_higher = LOWER + 1;
-			}
-			else
-			{
-				UPPER_lower = UPPER;
-			}
-		}
-	}
-
-	if (strcmp(edge_name, "E1") == 0 || strcmp(edge_name, "E3") == 0 || strcmp(edge_name, "E5") == 0 || strcmp(edge_name, "E9") == 0 || strcmp(edge_name, "E11") == 0
-		|| strcmp(edge_name, "E13") == 0 
-		
-		|| strcmp(edge_name, ":J19_0") == 0 || strcmp(edge_name, ":J6_0") == 0 || strcmp(edge_name, ":J19_1") == 0 || strcmp(edge_name, ":J11_0") == 0 
-		|| strcmp(edge_name, ":J5_1") == 0  || strcmp(edge_name, ":J1_1") == 0 || strcmp(edge_name, ":J27_1") == 0 || strcmp(edge_name, ":J29_0") == 0 
-		|| strcmp(edge_name, ":J10_1") == 0 || strcmp(edge_name, ":J2_0") == 0)
-	{
-		if (emergency) {
-			LOWER_higher = LOWER;
-			UPPER_lower = UPPER - 2.5;
-		}
-		else {
-			LOWER_higher = LOWER;
-			UPPER_lower = UPPER;
-		}
+	else {
+		LOWER_higher = LOWER;
+		UPPER_lower = UPPER;
 	}
 
 	// Following condition forces specific target line for emergency vehicle
 	if (strcmp(type_name, "lane_free_car_12") == 0)
 	{
 		verordnungsindex = verordnungsindex_emergency;
-		if (strcmp(edge_name, "E2") == 0 || strcmp(edge_name, "E4") == 0 || strcmp(edge_name, "E6") == 0 || strcmp(edge_name, "E7") == 0 ||
-			strcmp(edge_name, "E8") == 0 || strcmp(edge_name, "E10") == 0 || strcmp(edge_name, "E12") == 0) {
-			target_line = 12.9;
-		}
-		else
-		{
-			target_line = 8.9;
-		}
+		target_line = 12.9;
 	}
 	else {
 		double UPPER_new = MIN(UPPER_lower, UPPER);
