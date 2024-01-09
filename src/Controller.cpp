@@ -238,52 +238,6 @@ void overtake
 	}
 }
 
-double resetvd(NumericalID ids_ego, NumericalID ids_edge){
-	/*
-	Currently, the function hard codes the modified speeds by looking at vehicle types. 
-	The vehicle types are used as means to distinguish vehicle destinations (on-ramp or off-ramp).
-	*/ 
-	char* edge_name = get_edge_name(ids_edge);
-	char* type_name = get_veh_type_name(ids_ego);
-	double y_init = get_position_y(ids_ego);
-	double road_width = get_edge_width(ids_edge);
-	double v_width = get_veh_width(ids_ego);
-
-	if (y_init >= 4.0){
-		if (strcmp(edge_name, "E2") == 0)
-		{
-			if (strcmp(type_name, "lane_free_car_1") == 0)
-			{
-				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 7;
-				set_desired_speed(ids_ego, v_desired-1);
-			}
-		}
-
-		if (strcmp(edge_name, "E7") == 0 || strcmp(edge_name, "E8") == 0)
-		{
-			if (strcmp(type_name, "lane_free_car_2") == 0 || strcmp(type_name, "lane_free_car_5") == 0)
-			{
-				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 8;
-				set_desired_speed(ids_ego, v_desired);
-			}
-		}
-	
-		if (strcmp(edge_name, "E10") == 0)
-		{
-			if (strcmp(type_name, "lane_free_car_3") == 0 || strcmp(type_name, "lane_free_car_6") == 0 || strcmp(type_name, "lane_free_car_9") == 0)
-			{
-			
-				double v_desired = (double)MIN_DESIRED_SPEED + ((y_init - 4) / (10.2)) * ((double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED) - 7;
-				set_desired_speed(ids_ego, v_desired);
-			}
-		}
-	}
-	else if (y_init >= 4) {
-		set_desired_speed(ids_ego, (double)MIN_DESIRED_SPEED);
-	}
-	return 0;
-}
-
 bool emergency_range(double emergency_location, double emergency_speed, double position_x, NumericalID id_ego) {
 	bool index{};
 	double safty_range_front = 250;

@@ -234,7 +234,6 @@ void simulation_step() {
 				char* veh_name = get_vehicle_name(ids_in_edge[j]);
 				char* veh_type = get_veh_type_name(ids_in_edge[j]);	
 				double mid = (UPPER_LONG + LOWER_LONG) * 0.5;
-				resetvd(ids_in_edge[j], myedges[i]);
 
 				vd = get_desired_speed(ids_in_edge[j]);
 				vx = get_speed_x(ids_in_edge[j]);

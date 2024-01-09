@@ -178,13 +178,6 @@ double lower_boundary_forces(double fy, NumericalID ids_in_edge, double mid_poin
 // Function for calculating the potential lines
 double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, double UPPER, bool emergency);
 
-double UPPER_boundary(NumericalID ids_ego, NumericalID ids_edge);
-
-double LOWER_boundary(NumericalID ids_ego, NumericalID ids_edge);
-
-// Sets the vehicle speeds according to current position and destination of the vehicles. It is important for the on-ramp and off-ramp vehicles.
-double resetvd(NumericalID ids_ego, NumericalID ids_edge);
-
 bool emergency_range(double emergency_location, double emergency_speed, double position_x, NumericalID id_ego);
 
 //double rand_normal(double mean, double stddev);
@@ -192,8 +185,6 @@ bool emergency_range(double emergency_location, double emergency_speed, double p
 double box_muller(double mu, double sigma);
 
 double generate_desired_speed();
-
-double Kp_pl_ramp(double pos_x, double pos_y, NumericalID ids_ego, NumericalID ids_edge);
 
 // this is how you can define static variables
 EXTERN_C int example_extern_variable_static;
