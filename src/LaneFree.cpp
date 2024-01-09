@@ -26,6 +26,9 @@
 #define MAX_DESIRED_SPEED_E 45
 #define CIRCULAR_MOVEMENT 0
 
+#define UPPER_LONG 9.0
+#define LOWER_LONG 1.2
+
 #define wx1 0.7
 #define wx2 0.7
 #define wy  0.5
@@ -47,8 +50,6 @@ double total_width{};
 
 void simulation_initialize() {
 
-	wth = fopen("C:/Users/Hanwen/Desktop/SimulationPlot/wth.csv", "w+");
-	tarfet_line = fopen("C:/Users/Hanwen/Desktop/SimulationPlot/wth.csv", "w+");
 
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
@@ -231,10 +232,8 @@ void simulation_step() {
 				}
 
 				char* veh_name = get_vehicle_name(ids_in_edge[j]);
-				char* veh_type = get_veh_type_name(ids_in_edge[j]);
-				double UPPER = UPPER_boundary(ids_in_edge[j], myedges[i]);
-				double LOWER = LOWER_boundary(ids_in_edge[j], myedges[i]);		
-				double mid = (UPPER + LOWER) * 0.5;
+				char* veh_type = get_veh_type_name(ids_in_edge[j]);	
+				double mid = (UPPER_LONG + LOWER_LONG) * 0.5;
 				resetvd(ids_in_edge[j], myedges[i]);
 
 				vd = get_desired_speed(ids_in_edge[j]);
@@ -244,7 +243,7 @@ void simulation_step() {
 				target_speed_forces(ax_desired, ay_desired, ids_in_edge[j], vd);
 
 				bool emergency = emergency_range(emergency_location, emergency_speed, position_x, ids_in_edge[j]);
-				double ordnungskraft = pl_calculation(ids_in_edge[j], myedges[i], LOWER, UPPER, emergency);
+				double ordnungskraft = pl_calculation(ids_in_edge[j], myedges[i], LOWER_LONG, UPPER_LONG, emergency);
 
 				if (strcmp(veh_type, "lane_free_car_12") == 0) {
 					fx = ax_desired + NUDGING_INDEX_Emergency * fx_nudging + REPULSIVE_INDEX_Emergency * fx_repulsive;
@@ -257,8 +256,8 @@ void simulation_step() {
 
 				// Add the forces for the boundary
 				double fy_control{ 0 };
-				double fy_control_upper = upper_boundary_forces(fy, ids_in_edge[j], mid, UPPER);
-				double fy_control_lower = lower_boundary_forces(fy, ids_in_edge[j], mid, LOWER);
+				double fy_control_upper = upper_boundary_forces(fy, ids_in_edge[j], mid, UPPER_LONG);
+				double fy_control_lower = lower_boundary_forces(fy, ids_in_edge[j], mid, LOWER_LONG);
 
 				double pos_x = get_global_position_x(ids_in_edge[j]);
 				double pos_y = get_position_y(ids_in_edge[j]);
