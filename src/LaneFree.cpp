@@ -268,14 +268,7 @@ void simulation_step() {
 					fy_control = fy_control_lower;
 				};
 
-				if (strcmp(edge_name, "R2") == 0 || strcmp(edge_name, "R3") == 0 || strcmp(edge_name, "R6") == 0) 
-				{
-					apply_acceleration(ids_in_edge[j], 0, 0);
-				}
-				else
-				{
-					apply_acceleration(ids_in_edge[j], fx, fy_control);
-				}
+				apply_acceleration(ids_in_edge[j], fx, fy_control);
 
 				if (pos_x < all_records[ids_in_edge[j]].up)
 				{
