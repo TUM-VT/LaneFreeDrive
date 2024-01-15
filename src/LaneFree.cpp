@@ -26,6 +26,9 @@
 #define MAX_DESIRED_SPEED_E 45
 #define CIRCULAR_MOVEMENT 0
 
+#define DFRONT 300
+#define DBACK 50
+
 #define UPPER_LONG 9.0
 #define LOWER_LONG 1.2
 
@@ -47,6 +50,8 @@ EmergencyVehicleLocation* speed_records = NULL;
 double emergency_location{};
 double emergency_speed{};
 double total_width{};
+
+std::map<NumericalID, Car*> carsMap;
 
 void simulation_initialize() {
 
@@ -121,6 +126,33 @@ void simulation_step() {
 	double back_distance = 50;//get vehicles up to 200 meters ahead
 	int cross_edge = 0;  //1: get neighbors that are beyond the current road segment, 0: get only vehicles within the same road edge
 
+	NumericalID* allVehIDs = get_all_ids();
+	PotentialLines strategy = PotentialLines();
+	
+	// Update the vehicle class instances
+	for (int i = 0; i < get_all_ids_size(); i++) {
+		NumericalID numID = allVehIDs[i];
+		if (carsMap.count(numID) == 0) {
+			Car* car = new Car(numID);
+			carsMap[numID] = car;
+			carsMap[numID]->setLFTStrategy(&strategy);
+		}
+		carsMap[numID]->update();
+	}
+
+	strategy.setCarsMap(carsMap);
+
+	for (int i = 0; i < n_myedges; i++) {
+
+		n_edge_ids = get_all_ids_in_edge_size(myedges[i]);
+		ids_in_edge = get_all_ids_in_edge(myedges[i]);
+
+		for (int j = 0; j < n_edge_ids; j++) {
+			carsMap[ids_in_edge[j]]->applyAcceleration();
+		}
+
+	}
+	/*
 	for (int i = 0; i < n_myedges; i++) {
 
 		n_edge_ids = get_all_ids_in_edge_size(myedges[i]); //returns the numbera of all ids in a given edge, based on the edge's id
@@ -317,6 +349,8 @@ void simulation_step() {
 			delete[]power;
 		}
 	}
+	*/
+	
 }
 
 void simulation_finalize() {

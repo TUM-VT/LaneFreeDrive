@@ -1,3 +1,5 @@
+#include <map>
+#include <string>
 #ifdef CONTROLLER_H
 #define EXTERN_C /* nothing */
 #else
@@ -7,24 +9,86 @@
 typedef long long int NumericalID;
 typedef enum { FCA_0, FCA_1, FCA_2, FCA_3 } fca_method_t;
 
-class PassengerCar{
+class Car;
+
+class LFTStrategy {
+public:
+	LFTStrategy(){};
+	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
+	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
+
+protected:
+	std::map<NumericalID, Car*> carsMap;
+};
+
+class PotentialLines : public LFTStrategy {
+
 public:
 
-	double Speed() { return speed; }
-	void Speed(double x) {}
-
-	double GlobalX() { return globalX; }
-	void GlobalX(double x) {}
-
-	double Pos_y() { return globalX; }
-	void Pos_y(double pos_y) {}
+	PotentialLines();
+	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 
 private:
-	double speed{ 0 };
 
-	double globalX{ 0 };
+	double FrontDistnce;
+	double BackDistance;
+	double ForceIndex;
+	double Li, wx1, wx2, wy, verordnungsindex;
+	int n, p, q;
 
-	double pos_y{ 0 };
+	std::tuple<double, double> calculateNeighbourForces(Car* ego, NumericalID* other_ids, size_t n_others);
+
+	std::tuple<double, double> calculateAB(Car* ego, Car* neighbour);
+
+	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
+
+	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
+
+	std::tuple<double, double> calculateBoundaryForces(Car* ego, double lower_bound, double upper_bound);
+
+	double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound);
+
+	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
+	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
+	* It uses the Trapezoidal rule for integration.
+	*/
+	double mixed_normal_cdf(double x);
+
+	/* The underlying probability density function used for generating potential lines.
+	* At the moment, it uses a combintation of two guassian distributions, representing fast- and slow-moving vehicles
+	*/
+	double mixed_normal_pdf(double x);
+
+};
+
+class Car {
+public:
+	Car(NumericalID numID);
+	Car() {};
+	void update();
+	void applyAcceleration();
+
+	double getWidth() { return width; }
+	double getLength() { return length; }
+	std::string getTypeName() { return typeName; }
+	NumericalID getNumId() { return numID; }
+	double getX() { return x; }
+	double getY() { return y; }
+	double getSpeedX() { return speedX; }
+	double getSpeedY() { return speedY; }
+
+	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
+
+protected:
+	double width;
+	double length;
+	double speedX;
+	double speedY;
+	double x;
+	double y;
+	std::string typeName;
+	NumericalID numID;
+	LFTStrategy* lftstrategy;
 };
 
 typedef struct 
