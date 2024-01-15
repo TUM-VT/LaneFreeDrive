@@ -2,11 +2,7 @@
 #define EXTERN_C /* nothing */
 #else
 #define EXTERN_C extern
-#endif /* DEFINE_VARIABLES */
-// 23:42 2022 07 23
-// 
-//#define wx 0.5
-//#define wy 0.25
+#endif 
 
 typedef long long int NumericalID;
 typedef enum { FCA_0, FCA_1, FCA_2, FCA_3 } fca_method_t;

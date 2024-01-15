@@ -350,14 +350,11 @@ double pl_calculation(NumericalID ids_ego, NumericalID ids_edge, double LOWER, d
 	}
 	else {
 		double UPPER_new = MIN(UPPER_lower, UPPER);
-		printf("UPPER_new: %f\n", UPPER_new);
 		double LOWER_new = MAX(LOWER_higher, LOWER);
-		printf("LOWER_new: %f\n", LOWER_new);
 		target_line = LOWER_new + cdf_value * (UPPER_new - LOWER_new);
 	}
 
 	char* name = get_vehicle_name(ids_ego);
 	double ordnungskraft = verordnungsindex * (target_line - pos_y) - ky * vy;
-	printf("The vehicle %s in type %s has desired speed and target line: (%f, %f) \nOrdnungskraft: %f\n", name, type_name, vd, target_line, ordnungskraft);
 	return ordnungskraft;
 }

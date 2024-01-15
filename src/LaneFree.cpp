@@ -306,8 +306,6 @@ void simulation_step() {
 					char* na = get_vehicle_name(ids_in_edge[j]);
 					char* ty = get_veh_type_name(ids_in_edge[j]);
 					double dv = get_desired_speed(ids_in_edge[j]);
-
-					fprintf(wth, "%d, %s, %f, %f, %f\n", t, na, pos_y, vx, dv);
 				}
 				flow_records[ids_in_edge[j]].last = pos_x;
 			}
