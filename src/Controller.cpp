@@ -103,6 +103,7 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors, back_neighbors_size);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors, front_neighbors_size);
+	fx_repluse = -fx_repluse;
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
 	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
 	auto [fy_lower_boundary, fy_upper_boundary] = calculateBoundaryForces(ego, LowerLong, UpperLong);
@@ -160,20 +161,17 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 
 	double theta = atan(rel_dist_y / rel_dist_x);
 	double fx{0}, fy{0};
-	//fx = -f * cos(theta);
-	//fy = -f * sin(theta);
 	
+	fx = f * cos(theta);
 	if (neighbour->getY() >= ego->getY()) {
-		fx = f * cos(theta);
 		fy = -f * sin(theta);
 	}
 	else {
-		fx = f * cos(theta);
 		fy = f * sin(theta);
 	}
-	
 	return std::make_tuple(fx, fy);
 }
+
 
 std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	double vd = get_desired_speed(car->getNumId());
