@@ -71,6 +71,7 @@ public:
 	double getWidth() { return width; }
 	double getLength() { return length; }
 	std::string getTypeName() { return typeName; }
+	std::string getVehName() { return vehName; }
 	NumericalID getNumId() { return numID; }
 	double getX() { return x; }
 	double getY() { return y; }
@@ -87,6 +88,7 @@ protected:
 	double x;
 	double y;
 	std::string typeName;
+	std::string vehName;
 	NumericalID numID;
 	LFTStrategy* lftstrategy;
 };

@@ -53,6 +53,7 @@ Car::Car(NumericalID numID) {
 	length = get_veh_length(numID);
 	this->numID = numID;
 	typeName = get_veh_type_name(numID);
+	vehName = get_vehicle_name(numID);
 }
 
 void Car::applyAcceleration() {
