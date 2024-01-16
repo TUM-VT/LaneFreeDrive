@@ -90,6 +90,8 @@ PotentialLines::PotentialLines() {
 	MINDesiredSpeed = (double)MIN_DESIRED_SPEED;
 	MAXDesiredSpeed = (double)MAX_DESIRED_SPEED;
 	verordnungsindex = verordnungsindex_normal;
+	nudge_index = 1.5;
+	repulse_index = 1.5;
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
@@ -107,8 +109,8 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
-	fx = ax_desired + fx_nudge + fx_repluse;
-	fy = ay_desired + fy_nudge + fy_repluse + fy_pl;
+	fx = ax_desired + nudge_index * fx_nudge + repulse_index * fx_repluse;
+	fy = ay_desired + nudge_index * fy_nudge + repulse_index * fy_repluse + fy_pl;
 	// Consider the boundary control
 	double mid = (UpperLong + LowerLong) * 0.5;
 	if (ego->getY() >= mid) {

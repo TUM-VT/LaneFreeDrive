@@ -34,6 +34,7 @@ private:
 	double BackDistance;
 	double ForceIndex;
 	double Li, wx1, wx2, wy, verordnungsindex;
+	double nudge_index, repulse_index;
 	int n, p, q;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, NumericalID* other_ids, size_t n_others);
