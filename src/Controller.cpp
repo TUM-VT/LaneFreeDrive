@@ -72,6 +72,8 @@ PotentialLines::PotentialLines() {
 	FrontDistnce = 50;
 	BackDistance = 50;
 	ForceIndex = FORCE_INDEX;
+	LowerLong = LOWER_LONG;
+	UpperLong = UPPER_LONG;
 	wx1 = 0.7;
 	wx2 = 0.7;
 	wy = 0.5;
@@ -79,6 +81,13 @@ PotentialLines::PotentialLines() {
 	p = 2;
 	q = 6;
 	Li = 1.8;
+	Wi = 1.3;
+	Kp1 = kp1;
+	Kp2 = kp2;
+	kpBoundary = kp_boundary;
+	kdBoundary = kd_boundary;
+	MINDesiredSpeed = (double)MIN_DESIRED_SPEED;
+	MAXDesiredSpeed = (double)MAX_DESIRED_SPEED;
 	verordnungsindex = verordnungsindex_normal;
 }
 
@@ -92,15 +101,15 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors, back_neighbors_size);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors, front_neighbors_size);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl = calculatePLForce(ego, LOWER_LONG, UPPER_LONG);
-	auto [fy_lower_boundary, fy_upper_boundary] = calculateBoundaryForces(ego, LOWER_LONG, UPPER_LONG);
+	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
+	auto [fy_lower_boundary, fy_upper_boundary] = calculateBoundaryForces(ego, LowerLong, UpperLong);
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
 	fx = ax_desired + fx_nudge + fx_repluse;
 	fy = ay_desired + fy_nudge + fy_repluse + fy_pl;
 	// Consider the boundary control
-	double mid = (UPPER_LONG + LOWER_LONG) / 2;
+	double mid = (UpperLong + LowerLong) * 0.5;
 	if (ego->getY() >= mid) {
 		fy = MIN(fy, fy_upper_boundary);
 	}
@@ -125,16 +134,15 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, Nu
 }
 
 std::tuple<double, double> PotentialLines::calculateAB(Car* ego, Car* neighbour) {
-	int Li = 1.8;
 	double a{0}, b{0};
 	a = Li * (ego->getLength() + neighbour->getLength())
 		+ wx1 * (ego->getSpeedX() + neighbour->getSpeedX())
 		+ wx2 * fabs(ego->getSpeedX() - neighbour->getSpeedX());
-	double Wi = 1.3 * ego->getWidth() + 1.3 * neighbour->getWidth();
+	double wi = Wi * ego->getWidth() + Wi * neighbour->getWidth();
 
 	double item0 = (neighbour->getSpeedY() - ego->getSpeedY()) / (ego->getY() - neighbour->getY() + 0.0001);
 	double p0 = sqrt(pow(item0, 2.0) + 0.001);
-	b = Wi + wy * (tanh(item0) + sqrt(tanh(item0 * item0) + 0.0001));
+	b = wi + wy * (tanh(item0) + sqrt(tanh(item0 * item0) + 0.0001));
 	return std::make_tuple(a, b);
 }
 
@@ -168,8 +176,8 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	double vd = get_desired_speed(car->getNumId());
 	double target_speed = 1.1 * car->getSpeedX();
 	double control_speed = MIN(target_speed, vd);
-	double ax_desired = kp1 * (control_speed - car->getSpeedX());
-	double ay_desired = -kp2 * car->getSpeedY();
+	double ax_desired = Kp1 * (control_speed - car->getSpeedX());
+	double ay_desired = -Kp2 * car->getSpeedY();
 	return std::make_tuple(ax_desired, ay_desired);
 }
 
@@ -178,8 +186,8 @@ double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upp
 	double ky = 0.05;
 
 	double cdf_value = mixed_normal_cdf(vd);
-	double co = vd - (double)MIN_DESIRED_SPEED;
-	double areas = (double)MAX_DESIRED_SPEED - (double)MIN_DESIRED_SPEED;
+	double co = vd - MINDesiredSpeed;
+	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
 	double plForce = verordnungsindex * (target_line - ego->getY()) - ky * ego->getSpeedY();
 	return plForce;
@@ -187,10 +195,10 @@ double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upp
 
 std::tuple<double, double> PotentialLines::calculateBoundaryForces(Car* ego, double lower_bound, double upper_bound) {
 	double upper_diff = upper_bound - ego->getY();
-	double upper_bound_force = kp_boundary * upper_diff - kd_boundary * ego->getSpeedY();
+	double upper_bound_force = kpBoundary * upper_diff - kdBoundary * ego->getSpeedY();
 
 	double lower_diff = lower_bound - ego->getY();
-	double lower_bound_force = kp_boundary * lower_diff - kd_boundary * ego->getSpeedY();
+	double lower_bound_force = kpBoundary * lower_diff - kdBoundary * ego->getSpeedY();
 	return std::make_tuple(lower_bound_force, upper_bound_force);
 }
 
