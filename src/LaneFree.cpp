@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include "Controller.h"
+#include "PotentialLines.h"
 #define DEFINE_VARIABLES
 
 #ifdef __unix__
