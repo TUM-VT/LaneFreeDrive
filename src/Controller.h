@@ -32,8 +32,11 @@ private:
 
 	double FrontDistnce;
 	double BackDistance;
-	double ForceIndex;
-	double Li, wx1, wx2, wy, verordnungsindex;
+	double ForceIndex, LowerLong, UpperLong;
+	double Li, Wi, wx1, wx2, wy, verordnungsindex;
+	double Kp1, Kp2;
+	double MINDesiredSpeed, MAXDesiredSpeed;
+	double kpBoundary, kdBoundary;
 	double nudge_index, repulse_index;
 	int n, p, q;
 
