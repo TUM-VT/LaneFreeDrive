@@ -19,10 +19,6 @@ PotentialLines::PotentialLines() {
 	iniMap parameters = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
 	auto it = parameters.find("Potential Lines Parameters");
 	map<string, string> secParam = it->second;
-	printf("abc");
-	printf("%s", secParam["FrontDistance"].c_str());
-	printf("%s", secParam["FrontDistance"].c_str());
-	printf("%s", secParam["FrontDistance"].c_str());
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
