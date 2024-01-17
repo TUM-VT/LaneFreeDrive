@@ -34,7 +34,7 @@ PotentialLines::PotentialLines() {
 	Li = stod(secParam["Li"]);
 	Wi = stod(secParam["Wi"]);
 	Kp1 = stod(secParam["kp1"]);
-	Kp2 = stod(secParam["kp1"]);
+	Kp2 = stod(secParam["kp2"]);
 	kpBoundary = stod(secParam["kp_boundary"]);
 	kdBoundary = stod(secParam["kd_boundary"]);
 	MINDesiredSpeed = stod(secParam["min_desired_speed"]);
