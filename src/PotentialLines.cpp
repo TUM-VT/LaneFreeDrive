@@ -154,7 +154,7 @@ std::tuple<double, double> PotentialLines::calculateBoundaryForces(Car* ego, dou
 }
 
 double PotentialLines::mixed_normal_cdf(double x) {
-	double lower_speed = 25.0;
+	double lower_speed = MINDesiredSpeed;
 	double upper_speed = x;
 	int num_intervals = 1000;
 	double interval_width = (upper_speed - lower_speed) / num_intervals;
