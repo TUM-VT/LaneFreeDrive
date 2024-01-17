@@ -53,10 +53,11 @@ double emergency_speed{};
 double total_width{};
 
 std::map<NumericalID, Car*> carsMap;
+PotentialLines strategy;
 
 void simulation_initialize() {
 
-
+	strategy = PotentialLines();
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
 
@@ -128,7 +129,6 @@ void simulation_step() {
 	int cross_edge = 0;  //1: get neighbors that are beyond the current road segment, 0: get only vehicles within the same road edge
 
 	NumericalID* allVehIDs = get_all_ids();
-	PotentialLines strategy = PotentialLines();
 	
 	// Update the vehicle class instances
 	for (int i = 0; i < get_all_ids_size(); i++) {
