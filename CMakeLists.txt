@@ -37,3 +37,8 @@ if(WIN32)
 endif()
 
 target_compile_features(libLaneFreePlugin PRIVATE cxx_std_17)
+find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
+target_include_directories(libLaneFreePlugin PRIVATE ${SIMPLEINI_INCLUDE_DIRS})
+
+configure_file(src/config.ini config.ini)
+configure_file(src/default_config/default_config.ini default_config/default_config.ini)

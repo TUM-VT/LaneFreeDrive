@@ -1,55 +1,50 @@
 #include "PotentialLines.h"
 #include "LaneFree.h"
 
-
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))
 #define MIN(a, b) (((a) <= (b))?(a):(b))
 
-#define MIN_DESIRED_SPEED 25
-#define MAX_DESIRED_SPEED 35
-#define verordnungsindex_normal 0.12
-
-#define UPPER_LONG 9.0
-#define LOWER_LONG 1.2
-
 #define PI 3.14159265358979323846
-
-#define kp1 0.3
-#define kp2 0.65
-#define kp_boundary 0.55
-#define kd_boundary 0.2
-#define FORCE_INDEX 2
 
 #define mu1 28.0
 #define sigma1 1.0
 #define mu2 32.0
 #define sigma2 1.0
 
+using std::map;
+using std::string;
 
 PotentialLines::PotentialLines() {
-	FrontDistnce = 50;
-	BackDistance = 50;
-	ForceIndex = FORCE_INDEX;
-	LowerLong = LOWER_LONG;
-	UpperLong = UPPER_LONG;
-	wx1 = 0.7;
-	wx2 = 0.7;
-	wy = 0.5;
-	n = 2;
-	p = 2;
-	q = 6;
-	Li = 1.8;
-	Wi = 1.3;
-	Kp1 = kp1;
-	Kp2 = kp2;
-	kpBoundary = kp_boundary;
-	kdBoundary = kd_boundary;
-	MINDesiredSpeed = (double)MIN_DESIRED_SPEED;
-	MAXDesiredSpeed = (double)MAX_DESIRED_SPEED;
-	verordnungsindex = verordnungsindex_normal;
-	nudge_index = 1.5;
-	repulse_index = 1.5;
+	iniMap parameters = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	auto it = parameters.find("Potential Lines Parameters");
+	map<string, string> secParam = it->second;
+	printf("abc");
+	printf("%s", secParam["FrontDistance"].c_str());
+	printf("%s", secParam["FrontDistance"].c_str());
+	printf("%s", secParam["FrontDistance"].c_str());
+	FrontDistnce = stod(secParam["FrontDistance"]);
+	BackDistance = stod(secParam["BackDistance"]);
+	ForceIndex = stod(secParam["ForceIndex"]);
+	LowerLong = stod(secParam["LowerLong"]);
+	UpperLong = stod(secParam["UpperLong"]);
+	wx1 = stod(secParam["wx1"]);
+	wx2 = stod(secParam["wx2"]);
+	wy = stod(secParam["wy"]);
+	n = stoi(secParam["n"]);
+	p = stoi(secParam["p"]);
+	q = stoi(secParam["q"]);
+	Li = stod(secParam["Li"]);
+	Wi = stod(secParam["Wi"]);
+	Kp1 = stod(secParam["kp1"]);
+	Kp2 = stod(secParam["kp1"]);
+	kpBoundary = stod(secParam["kp_boundary"]);
+	kdBoundary = stod(secParam["kd_boundary"]);
+	MINDesiredSpeed = stod(secParam["min_desired_speed"]);
+	MAXDesiredSpeed = stod(secParam["max_desired_speed"]);
+	verordnungsindex = stod(secParam["pl_force_index"]);
+	nudge_index = stod(secParam["nudge_index"]);
+	repulse_index = stod(secParam["repulse_index"]);
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {

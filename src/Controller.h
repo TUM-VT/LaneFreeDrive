@@ -9,6 +9,7 @@
 
 typedef long long int NumericalID;
 typedef enum { FCA_0, FCA_1, FCA_2, FCA_3 } fca_method_t;
+using iniMap = std::map<std::string, std::map<std::string, std::string>>;
 
 class Car;
 
@@ -20,6 +21,8 @@ public:
 
 protected:
 	std::map<NumericalID, Car*> carsMap;
+	iniMap LFTStrategy::readConfigFileFallback(char* config_file, char* default_config);
+	iniMap readConfigFile(char* file_name);
 };
 
 class Car {
