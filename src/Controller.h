@@ -15,14 +15,13 @@ class Car;
 
 class LFTStrategy {
 public:
-	LFTStrategy(){};
+	LFTStrategy() {};
+	LFTStrategy(iniMap config){};
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
 
 protected:
 	std::map<NumericalID, Car*> carsMap;
-	iniMap LFTStrategy::readConfigFileFallback(char* config_file, char* default_config);
-	iniMap readConfigFile(char* file_name);
 };
 
 class Car {

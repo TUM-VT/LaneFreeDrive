@@ -51,69 +51,6 @@ namespace fs = std::filesystem;
 #define mu2 32.0
 #define sigma2 1.0
 
-iniMap LFTStrategy::readConfigFileFallback(char* config_file, char* default_file) {
-	iniMap defaultVals = readConfigFile(default_file);
-	iniMap data;
-	try {
-		data = readConfigFile(config_file);
-	}
-	catch (const std::runtime_error& e) {
-		printf("Using default parameters from file %s\n", default_file);
-		return defaultVals;
-	}
-
-	for (auto x = defaultVals.begin(); x != defaultVals.end(); ++x) {
-		std::string defSec = x->first;
-		std::map<std::string, std::string> defKeyVal = x->second;
-		auto itSec = data.find(defSec);
-		if (itSec != data.end()) {
-			std::map<std::string, std::string>* KVMap = &itSec->second;
-			for (auto y = defKeyVal.begin(); y != defKeyVal.end(); ++y) {
-				std::string param = y->first;
-				if (KVMap->count(param) == 0) {
-					printf("Parameter %s not found in config. Setting to default value %s\n", param.c_str(), y->second.c_str());
-					KVMap->insert(std::make_pair(param, y->second));
-				}
-			}
-		}
-		else {
-			printf("section %s does not exist in %s. Using default values.\n", defSec.c_str(), config_file);
-			data[defSec] = x->second;
-		}
-	}
-	return data;
-}
-
-iniMap LFTStrategy::readConfigFile(char* file_name) {
-	// Get path of the dll plugin for the lanefree traffic
-	HMODULE hModule = GetModuleHandle("libLaneFreePlugin.dll");
-	char dllPath[MAX_PATH];
-	GetModuleFileName(hModule, dllPath, MAX_PATH);
-	fs::path myPath(dllPath);
-	// Replace the dll name with the name of the file
-	myPath.replace_filename(file_name);
-	if (!fs::exists(myPath)) {
-		throw std::runtime_error("The configuration file " + std::string(file_name) + " not found\n");
-	}
-	iniMap data;
-	printf("Reading the configuration file %s\n", file_name);
-	CSimpleIniA ini;
-	ini.LoadFile(myPath.string().c_str());
-	CSimpleIniA::TNamesDepend sections;
-	ini.GetAllSections(sections);
-	for (const auto& section : sections)
-	{
-		CSimpleIniA::TNamesDepend keys;
-		ini.GetAllKeys(section.pItem, keys);
-		for (const auto& key : keys)
-		{
-			data[section.pItem][key.pItem] = ini.GetValue(section.pItem, key.pItem);
-		}
-	}
-	return data;
-}
-
-
 Car::Car(NumericalID numID) {
 	width =  get_veh_width(numID);
 	length = get_veh_length(numID);

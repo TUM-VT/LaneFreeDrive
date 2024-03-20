@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <SimpleIni.h>
+#include <map>
+#include <filesystem>
 #include "Controller.h"
 #include "PotentialLines.h"
 #define DEFINE_VARIABLES
@@ -52,12 +55,84 @@ double emergency_location{};
 double emergency_speed{};
 double total_width{};
 
-std::map<NumericalID, Car*> carsMap;
-PotentialLines strategy;
+using std::map;
+using std::string;
+using iniMap = map<string, map<string, string>>;
+namespace fs = std::filesystem;
+
+map<NumericalID, Car*> carsMap;
+map<string, LFTStrategy*> strategies;
+map<string, string> usedModelsMap;
+
+iniMap readConfigFile(char* file_name) {
+	// Get path of the dll plugin for the lanefree traffic
+	HMODULE hModule = GetModuleHandle("libLaneFreePlugin.dll");
+	char dllPath[MAX_PATH];
+	GetModuleFileName(hModule, dllPath, MAX_PATH);
+	fs::path myPath(dllPath);
+	// Replace the dll name with the name of the file
+	myPath.replace_filename(file_name);
+	if (!fs::exists(myPath)) {
+		throw std::runtime_error("The configuration file " + string(file_name) + " not found\n");
+	}
+	iniMap data;
+	printf("Reading the configuration file %s\n", file_name);
+	CSimpleIniA ini;
+	ini.LoadFile(myPath.string().c_str());
+	CSimpleIniA::TNamesDepend sections;
+	ini.GetAllSections(sections);
+	for (const auto& section : sections)
+	{
+		CSimpleIniA::TNamesDepend keys;
+		ini.GetAllKeys(section.pItem, keys);
+		for (const auto& key : keys)
+		{
+			string value = ini.GetValue(section.pItem, key.pItem);
+			data[section.pItem][key.pItem] = value;
+		}
+	}
+	return data;
+}
+
+iniMap readConfigFileFallback(char* config_file, char* default_file) {
+	iniMap defaultVals = readConfigFile(default_file);
+	iniMap data;
+	try {
+		data = readConfigFile(config_file);
+	}
+	catch (const std::runtime_error& e) {
+		printf("Using default parameters from file %s\n", default_file);
+		return defaultVals;
+	}
+
+	for (auto x = defaultVals.begin(); x != defaultVals.end(); ++x) {
+		string defSec = x->first;
+		map<string, string> defKeyVal = x->second;
+		auto itSec = data.find(defSec);
+		if (itSec != data.end()) {
+			map<string, string>* KVMap = &itSec->second;
+			for (auto y = defKeyVal.begin(); y != defKeyVal.end(); ++y) {
+				string param = y->first;
+				if (KVMap->count(param) == 0) {
+					printf("Parameter %s not found in config. Setting to default value %s\n", param.c_str(), y->second.c_str());
+					KVMap->insert(std::make_pair(param, y->second));
+				}
+			}
+		}
+		else {
+			printf("section %s does not exist in %s. Using default values.\n", defSec.c_str(), config_file);
+			data[defSec] = x->second;
+		}
+	}
+	return data;
+}
 
 void simulation_initialize() {
+	iniMap config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	strategies["PotentialLines"] = new PotentialLines(config);
+	auto it = config.find("Vehicle Models");
+	usedModelsMap = it->second;
 
-	strategy = PotentialLines();
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
 
@@ -101,7 +176,7 @@ void simulation_initialize() {
 			}
 		}
 	}
-	printf("Initializiation over!!!\n");
+	printf("\nInitializiation over!!!\n");
 }
 
 void simulation_step() {
@@ -136,12 +211,30 @@ void simulation_step() {
 		if (carsMap.count(numID) == 0) {
 			Car* car = new Car(numID);
 			carsMap[numID] = car;
-			carsMap[numID]->setLFTStrategy(&strategy);
+			string veh_type = car->getTypeName();
+			for (const auto& entry : usedModelsMap) {
+				string object_type = entry.first;
+				string model_type = usedModelsMap[object_type];
+				if (veh_type.compare(0, object_type.length(), object_type) == 0) {
+					auto it = strategies.find(model_type);
+					if (it != strategies.end()) {
+						LFTStrategy* strategy = it->second;
+						car->setLFTStrategy(strategy);
+					}
+					else {
+						throw std::invalid_argument("No suitable LFT strategy found for vtype " + veh_type
+							+ ". Check Vehicle Models in config file.");
+					}
+				}
+			}
 		}
 		carsMap[numID]->update();
 	}
 
-	strategy.setCarsMap(carsMap);
+	// Update the strategies
+	for (const auto& entry : strategies) {
+		entry.second->setCarsMap(carsMap);
+	}
 
 	for (int i = 0; i < n_myedges; i++) {
 

@@ -6,7 +6,7 @@ class PotentialLines : public LFTStrategy {
 
 public:
 
-	PotentialLines();
+	PotentialLines(iniMap config);
 	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 
 private:
