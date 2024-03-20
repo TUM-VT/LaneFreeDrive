@@ -234,6 +234,7 @@ void simulation_step() {
 	// Update the strategies
 	for (const auto& entry : strategies) {
 		entry.second->setCarsMap(carsMap);
+		entry.second->update();
 	}
 
 	for (int i = 0; i < n_myedges; i++) {

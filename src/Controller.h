@@ -19,6 +19,7 @@ public:
 	LFTStrategy(iniMap config){};
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
+	virtual void update() {};
 
 protected:
 	std::map<NumericalID, Car*> carsMap;
