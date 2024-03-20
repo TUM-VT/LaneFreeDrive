@@ -132,6 +132,7 @@ void Car::update() {
 	speedY = get_speed_y(numID);
 	x = get_position_x(numID);
 	y = get_position_y(numID);
+	currentEdge = get_edge_of_vehicle(numID);
 }
 
 static double U_lemma3

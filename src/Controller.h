@@ -41,6 +41,7 @@ public:
 	double getY() { return y; }
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
+	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
 
@@ -54,6 +55,7 @@ protected:
 	std::string typeName;
 	std::string vehName;
 	NumericalID numID;
+	NumericalID currentEdge;
 	LFTStrategy* lftstrategy;
 };
 
