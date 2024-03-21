@@ -8,6 +8,7 @@
 #include <filesystem>
 #include "Controller.h"
 #include "PotentialLines.h"
+#include "StripBasedHuman.h"
 #define DEFINE_VARIABLES
 
 #ifdef __unix__
@@ -62,6 +63,7 @@ namespace fs = std::filesystem;
 
 map<NumericalID, Car*> carsMap;
 map<string, LFTStrategy*> strategies;
+map<string, LFTStrategy*> used_strategies;
 map<string, string> usedModelsMap;
 
 iniMap readConfigFile(char* file_name) {
@@ -130,6 +132,7 @@ iniMap readConfigFileFallback(char* config_file, char* default_file) {
 void simulation_initialize() {
 	iniMap config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
 	strategies["PotentialLines"] = new PotentialLines(config);
+	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 	auto it = config.find("Vehicle Models");
 	usedModelsMap = it->second;
 
@@ -220,6 +223,7 @@ void simulation_step() {
 					if (it != strategies.end()) {
 						LFTStrategy* strategy = it->second;
 						car->setLFTStrategy(strategy);
+						used_strategies[model_type] = strategy;
 					}
 					else {
 						throw std::invalid_argument("No suitable LFT strategy found for vtype " + veh_type
@@ -232,7 +236,7 @@ void simulation_step() {
 	}
 
 	// Update the strategies
-	for (const auto& entry : strategies) {
+	for (const auto& entry : used_strategies) {
 		entry.second->setCarsMap(carsMap);
 		entry.second->update();
 	}
