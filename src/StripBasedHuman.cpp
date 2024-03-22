@@ -33,6 +33,9 @@ double EdgeStrips::getYFromInx(int index) {
 tuple<int, int> EdgeStrips::calculateStripInx(Car* car) {
 	double lower_bound = car->getY() - car->getWidth() / 2.0;
 	double upper_bound = car->getY() + car->getWidth() / 2.0;
+	if (upper_bound > edge_width || lower_bound < 0) {
+		printf("\nWarning: vehicle %s of type %s is crossing the edge boundary", car->getVehName(), car->getTypeName());
+	}
 	int main_strip_inx = floor(lower_bound / strip_width);
 	int num_occupied = ceil(upper_bound / strip_width) - main_strip_inx;
 	return std::make_tuple(main_strip_inx, num_occupied);
@@ -241,6 +244,17 @@ bool StripBasedHuman::isSufficientGap(Car* ego, int strip_inx) {
 	return sufficient_gap;
 }
 
+bool StripBasedHuman::isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips* strip) {
+	double y = strip->getYFromInx(strip_inx);
+	double car_width = car->getWidth();
+	double road_width = strip->getEdgeWidth();
+	bool violation = false;
+	if (y < 0 || (y + car_width > road_width)) {
+		violation = true;
+	}
+	return violation;
+}
+
 std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego) {
 	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
 	int ego_inx = ego_strip->getVehicleStripInfo(ego).mainInx;
@@ -249,11 +263,13 @@ std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego) {
 	bool right_side = false;
 	if (ego_inx > 0) {
 		right_side = isSufficientGap(ego, ego_inx - 1);
+		right_side = right_side && !isCrossingRoadBoundary(ego, ego_inx - 1, ego_strip);
 	}
 
 	bool left_side = false;
 	if (ego_inx < total_strips - 1) {
 		left_side = isSufficientGap(ego, ego_inx + 1);
+		left_side = left_side && !isCrossingRoadBoundary(ego, ego_inx + 1, ego_strip);
 	}
 
 	return std::make_tuple(right_side, left_side);

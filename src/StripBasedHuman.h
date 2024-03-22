@@ -26,6 +26,7 @@ public:
 	StripInfo getVehicleStripInfo(Car* car);
 	int getTotalNoStrips() { return total_strips; }
 	double getYFromInx(int index);
+	double getEdgeWidth() { return edge_width; }
 
 private:
 	NumericalID edge_id;
@@ -69,6 +70,8 @@ private:
 	void updateStripChangeBenefit(Car* ego, std::map<int, std::tuple<double, Car*>> safeVelMap);
 
 	bool isSufficientGap(Car* ego, int strip_inx);
+
+	bool isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips* strip);
 
 	std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego);
 
