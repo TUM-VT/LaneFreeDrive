@@ -19,22 +19,6 @@ EdgeStrips::EdgeStrips(NumericalID edge_id, double edge_width, double strip_widt
 	total_strips = floor(edge_width / strip_width);
 }
 
-Car* EdgeStrips::calculateClosestVehicleOnStrip(Car* ego, vector<Car*> front_neighbours) {
-	// Find the vehicle within reasonable range of strips on right and left side of the ego
-	double lower = ego->getY() - ego->getWidth() / 2.0 - strip_width;
-	double upper = ego->getY() + ego->getWidth() / 2.0 + strip_width;
-	Car* nearest_car = nullptr;
-
-	for (Car* car : front_neighbours) {
-		double y = car->getY();
-		if (y <= upper && y >= lower) {
-			nearest_car = car;
-			break;
-		}
-	}
-	return nearest_car;
-}
-
 StripInfo EdgeStrips::getVehicleStripInfo(Car* car) {
 	return carOccupancyMap[car];
 }

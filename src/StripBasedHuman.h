@@ -21,9 +21,6 @@ typedef struct
 class EdgeStrips {
 public:
 	EdgeStrips(NumericalID edge_id, double edge_width, double strip_width);
-	/*Calculates the closest vehicle among front neighbours that overlap with the strips of the ego vehicle.Returns nullptr if found none.
-	The front_neighbours are assumed to sorted according to logitudinal distance from ego vehicle.*/
-	Car* calculateClosestVehicleOnStrip(Car* ego, std::vector<Car*> front_neighbours);
 	void updateOccupiedMap(std::map<NumericalID, Car*>& carsMap);
 	std::vector<Car*> getStripVehicles(int index);
 	StripInfo getVehicleStripInfo(Car* car);
