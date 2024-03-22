@@ -73,6 +73,9 @@ private:
 
 	bool isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips* strip);
 
+	// Calculates the acceleration required to stop the lateral movement
+	double calculateStopLatAcc(Car* car);
+
 	std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego);
 
 	// Calculate the safe velocity for the ego vehicle

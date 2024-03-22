@@ -276,6 +276,14 @@ std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego) {
 	
 }
 
+double StripBasedHuman::calculateStopLatAcc(Car* car) {
+	double time_step = get_time_step_length();
+	double current_speed = car->getSpeedY();
+	int sign = (current_speed > 0) ? 1 : -1;
+	double ay = -sign * current_speed / time_step;
+	return ay;
+}
+
 
 tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	std::map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego);
@@ -318,14 +326,17 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 		double req_speed_y = diff_y / time_step;
 		double speed_diff = req_speed_y - ego->getSpeedY();
 		ay = speed_diff / time_step;
-	}
 
-	// Check if the lane change is possible
-	if (ay != 0) {
-		auto [bool_right, bool_left] = isLaneChangePossible(ego);
-		if ((benefit < 0 && !bool_right) || (benefit > 0 && !bool_left)) {
-			ay = 0;
+		// Check if the lane change is possible
+		if (ay != 0) {
+			auto [bool_right, bool_left] = isLaneChangePossible(ego);
+			if ((benefit < 0 && !bool_right) || (benefit > 0 && !bool_left)) {
+				ay = calculateStopLatAcc(ego);
+			}
 		}
+	}
+	else {
+		ay = calculateStopLatAcc(ego);
 	}
 
 	return std::make_tuple(ax, ay);
