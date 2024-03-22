@@ -169,7 +169,7 @@ tuple<int, double, Car*> StripBasedHuman::calculateLeaderFromSafeVelMap(Car* ego
 		if (safeVelMap.find(inx) != safeVelMap.end()) {
 			auto [vsafe, car] = safeVelMap[inx];
 			double diff = car->getX() - ego_x;
-			if (diff < closest_diff) {
+			if (diff < closest_diff && diff < FrontDistance) {
 				closest_diff = diff;
 				leader = car;
 				closest_vsafe = vsafe;
