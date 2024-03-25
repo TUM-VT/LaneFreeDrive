@@ -465,7 +465,10 @@ void event_vehicle_enter(NumericalID veh_id) {
 }
 
 void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
-	int num = 0;
+	if (has_arrived == 1) {
+		delete carsMap[veh_id];
+		carsMap.erase(veh_id);
+	}
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
