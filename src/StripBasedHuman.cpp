@@ -164,14 +164,38 @@ tuple<int, double, Car*> StripBasedHuman::calculateLeaderFromSafeVelMap(Car* ego
 	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
 	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
 	double ego_x = ego->getX();
+	int ego_inx = ego_strip_info.mainInx;
+	int ego_nocc = ego_strip_info.numOccupied;
+	int upper_ego_inx = ego_inx + ego_nocc;
 	double closest_diff = 1e12;
 	Car* leader = nullptr;
 	double closest_vsafe, closest_inx;
-	for (int i = 0; i < ego_strip_info.numOccupied; i++) {
-		int inx = ego_strip_info.mainInx + i;
+
+	// For cars overlapping for right side
+	for (int i = 1; i < ego_nocc; i++) {
+		int inx = ego_inx - i;
 		if (safeVelMap.find(inx) != safeVelMap.end()) {
 			auto [vsafe, car] = safeVelMap[inx];
-			double diff = car->getX() - ego_x;
+			double diff = car->getX() - car->getLength() - ego_x;
+			if (diff < closest_diff && diff < FrontDistance) {
+				int car_nocc = ego_strip->getVehicleStripInfo(ego).numOccupied;
+				// Does the car strips overlap with ego?
+				if (inx + car_nocc <= upper_ego_inx) {
+					closest_diff = diff;
+					leader = car;
+					closest_vsafe = vsafe;
+					closest_inx = inx;
+				}
+			}
+		}
+	}
+
+	// For cars overlapping for left side
+	for (int i = 0; i < ego_nocc; i++) {
+		int inx = ego_inx + i;
+		if (safeVelMap.find(inx) != safeVelMap.end()) {
+			auto [vsafe, car] = safeVelMap[inx];
+			double diff = car->getX() - car->getLength() - ego_x;
 			if (diff < closest_diff && diff < FrontDistance) {
 				closest_diff = diff;
 				leader = car;
