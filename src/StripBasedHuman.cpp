@@ -109,7 +109,7 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader) {
 	double a = ReactionTime * Deccelerate;
 	double gap = leader->getX() - leader->getLength() - ego->getX();
-	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Accelerate * gap);
+	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
 	return vsafe;
 }
 
