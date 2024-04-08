@@ -323,7 +323,7 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 
 	double next_vel_x = std::min(desired_speed, max_vel_x);
 	if (leader != nullptr) {
-		double next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
+		next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
 	};
 	
 	double diff_vel_x = next_vel_x - ego->getSpeedX();
