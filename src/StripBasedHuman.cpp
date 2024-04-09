@@ -108,7 +108,7 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 
 double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader) {
 	double a = ReactionTime * Deccelerate;
-	double gap = leader->getX() - leader->getLength() - ego->getX();
+	double gap = leader->getX() - leader->getLength()/2.0 - ego->getX();
 	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
 	return vsafe;
 }
@@ -126,7 +126,7 @@ tuple<vector<Car*>, vector<Car*>> StripBasedHuman::calculateFollowerLeader(Car* 
 		Car* lead_car = nullptr;
 		Car* follow_car = nullptr;
 		for (Car* car : strip_cars) {
-			double diff_x = car->getX() - car->getLength() - ego_x;
+			double diff_x = car->getX() - car->getLength()/2.0 - ego_x;
 			// The vector strip_cars is already arranged in order of longitudinal distance
 			if (diff_x > 0 && car->getNumId() != ego->getNumId()) {
 				lead_car = car;
@@ -176,7 +176,7 @@ tuple<int, double, Car*> StripBasedHuman::calculateLeaderFromSafeVelMap(Car* ego
 		int inx = ego_inx - i;
 		if (safeVelMap.find(inx) != safeVelMap.end()) {
 			auto [vsafe, car] = safeVelMap[inx];
-			double diff = car->getX() - car->getLength() - ego_x;
+			double diff = car->getX() - car->getLength()/2.0 - ego_x;
 			if (diff < closest_diff && diff < FrontDistance) {
 				int car_nocc = ego_strip->getVehicleStripInfo(ego).numOccupied;
 				// Does the car strips overlap with ego?
@@ -195,7 +195,7 @@ tuple<int, double, Car*> StripBasedHuman::calculateLeaderFromSafeVelMap(Car* ego
 		int inx = ego_inx + i;
 		if (safeVelMap.find(inx) != safeVelMap.end()) {
 			auto [vsafe, car] = safeVelMap[inx];
-			double diff = car->getX() - car->getLength() - ego_x;
+			double diff = car->getX() - car->getLength()/2.0 - ego_x;
 			if (diff < closest_diff && diff < FrontDistance) {
 				closest_diff = diff;
 				leader = car;
@@ -255,13 +255,13 @@ bool StripBasedHuman::isSufficientGap(Car* ego, int strip_inx) {
 	double ego_nextx = ego->getX() + delta_t * ego->getSpeedX();
 	if (leaders[0] != nullptr) {
 		double leader_nextx = leaders[0]->getX() + delta_t * leaders[0]->getSpeedX();
-		if (std::abs(ego_nextx - leader_nextx - leaders[0]->getLength()) < 0) {
+		if (std::abs(ego_nextx - leader_nextx - leaders[0]->getLength()/2.0) < 0) {
 			sufficient_gap = false;
 		}
 	}
 	if (followers[0] != nullptr) {
 		double follower_nextx = followers[0]->getX() + delta_t * followers[0]->getSpeedX();
-		if (std::abs(ego_nextx - follower_nextx - ego->getLength()) < 0) {
+		if (std::abs(ego_nextx - follower_nextx - ego->getLength()/2.0) < 0) {
 			sufficient_gap = false;
 		}
 	}
