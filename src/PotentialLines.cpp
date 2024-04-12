@@ -132,7 +132,7 @@ double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upp
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
-	double plForce = verordnungsindex * (target_line - ego->getY()) - ky * ego->getSpeedY();
+	double plForce = verordnungsindex * (target_line - ego->getY()) + ky * ego->getSpeedY();
 	return plForce;
 }
 
