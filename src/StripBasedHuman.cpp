@@ -33,9 +33,6 @@ double EdgeStrips::getYFromInx(int index) {
 tuple<int, int> EdgeStrips::calculateStripInx(Car* car) {
 	double lower_bound = car->getY() - car->getWidth() / 2.0;
 	double upper_bound = car->getY() + car->getWidth() / 2.0;
-	if (upper_bound > edge_width || lower_bound < 0) {
-		printf("\nWarning: vehicle %s of type %s is crossing the edge boundary", car->getVehName(), car->getTypeName());
-	}
 	int main_strip_inx = floor(lower_bound / strip_width);
 	int num_occupied = ceil(upper_bound / strip_width) - main_strip_inx;
 	return std::make_tuple(main_strip_inx, num_occupied);
