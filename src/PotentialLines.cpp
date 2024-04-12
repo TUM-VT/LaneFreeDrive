@@ -85,8 +85,12 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 		+ wx1 * (ego->getSpeedX() + neighbour->getSpeedX())
 		+ wx2 * fabs(ego->getSpeedX() - neighbour->getSpeedX());
 	double wi = Wi * ego->getWidth() + Wi * neighbour->getWidth();
-	double item0 = (ego->getY() - neighbour->getY()) / (neighbour->getSpeedY() - ego->getSpeedY() + 0.0001);
-	lat_axis = wi + wy * (tanh(item0) + sqrt(pow(tanh(item0), 2) + 0.0001));
+	// double item0 = (ego->getY() - neighbour->getY()) / (neighbour->getSpeedY() - ego->getSpeedY() + 0.0001);
+	// lat_axis = wi + wy * (tanh(item0) + sqrt(pow(tanh(item0), 2) + 0.0001));
+
+	double t1 = neighbour->getY() - ego->getY();
+	double t2 = ego->getSpeedY() - neighbour->getSpeedY();
+	lat_axis = wi + wy * (tanh(t1) * t2 + sqrt(pow(tanh(t1) * t2, 2) + 0.0001));
 
 	return std::make_tuple(lon_axis, lat_axis);
 }
