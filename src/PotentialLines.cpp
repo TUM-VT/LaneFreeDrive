@@ -98,24 +98,25 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 	return std::make_tuple(lon_axis, lat_axis);
 }
 
-std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double a, double b) {
+std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	double rel_dist_x = fabs(ego->getX() - neighbour->getX());
 	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
 
-	double item1 = pow((2 * rel_dist_x / a), n);
-	double item2 = pow((2 * rel_dist_y / b), p);
+	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
+	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
 
 	double f = ForceIndex / (pow((item1 + item2), q) + 1);
-
-	double theta = atan(rel_dist_y / rel_dist_x);
 	double fx{ 0 }, fy{ 0 };
-
+	if (f > 0.001) {
+		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour->getX()));
 	fx = f * cos(theta);
-	if (neighbour->getY() >= ego->getY()) {
-		fy = -f * sin(theta);
-	}
-	else {
 		fy = f * sin(theta);
+
+		double fx_sign = (ego->getX() < neighbour->getX()) ? -1 : 1;
+		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
+
+		fx = fx_sign * fabs(fx);
+		fy = fy_sign * fabs(fy);
 	}
 	return std::make_tuple(fx, fy);
 }
