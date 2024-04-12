@@ -86,9 +86,6 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, Nu
 	return std::make_tuple(totalFX, totalFy);
 }
 
-std::tuple<double, double> PotentialLines::calculateAB(Car* ego, Car* neighbour) {
-	double a{ 0 }, b{ 0 };
-	a = Li * (ego->getLength() + neighbour->getLength())
 std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour) {
 	double lon_axis{ 0 }, lat_axis{ 0 };
 	lon_axis = Li * (ego->getLength() + neighbour->getLength())
