@@ -78,8 +78,8 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, Nu
 		NumericalID neighbour_id = other_ids[f];
 		Car* neighbour = carsMap[neighbour_id];
 
-		auto [a, b] = calculateAB(ego, neighbour);
-		auto [fx, fy] = calculateForces(ego, neighbour, a, b);
+		auto [major, minor] = calculatePotentialFunMajorMinorAxis(ego, neighbour);
+		auto [fx, fy] = calculateForces(ego, neighbour, major, minor);
 		totalFX += fx;
 		totalFy += fy;
 	}
