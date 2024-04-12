@@ -23,7 +23,7 @@ private:
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, NumericalID* other_ids, size_t n_others);
 
-	std::tuple<double, double> calculateAB(Car* ego, Car* neighbour);
+	std::tuple<double, double> calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour);
 
 	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
 

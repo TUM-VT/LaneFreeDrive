@@ -89,14 +89,16 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, Nu
 std::tuple<double, double> PotentialLines::calculateAB(Car* ego, Car* neighbour) {
 	double a{ 0 }, b{ 0 };
 	a = Li * (ego->getLength() + neighbour->getLength())
+std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour) {
+	double lon_axis{ 0 }, lat_axis{ 0 };
+	lon_axis = Li * (ego->getLength() + neighbour->getLength())
 		+ wx1 * (ego->getSpeedX() + neighbour->getSpeedX())
 		+ wx2 * fabs(ego->getSpeedX() - neighbour->getSpeedX());
 	double wi = Wi * ego->getWidth() + Wi * neighbour->getWidth();
+	double item0 = (ego->getY() - neighbour->getY()) / (neighbour->getSpeedY() - ego->getSpeedY() + 0.0001);
+	lat_axis = wi + wy * (tanh(item0) + sqrt(pow(tanh(item0), 2) + 0.0001));
 
-	double item0 = (neighbour->getSpeedY() - ego->getSpeedY()) / (ego->getY() - neighbour->getY() + 0.0001);
-	double p0 = sqrt(pow(item0, 2.0) + 0.001);
-	b = wi + wy * (tanh(item0) + sqrt(tanh(item0 * item0) + 0.0001));
-	return std::make_tuple(a, b);
+	return std::make_tuple(lon_axis, lat_axis);
 }
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double a, double b) {
