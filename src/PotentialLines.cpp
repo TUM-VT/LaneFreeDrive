@@ -34,8 +34,6 @@ PotentialLines::PotentialLines(iniMap config) {
 	Wi = stod(secParam["Wi"]);
 	Kp1 = stod(secParam["kp1"]);
 	Kp2 = stod(secParam["kp2"]);
-	kpBoundary = stod(secParam["kp_boundary"]);
-	kdBoundary = stod(secParam["kd_boundary"]);
 	MINDesiredSpeed = stod(secParam["min_desired_speed"]);
 	MAXDesiredSpeed = stod(secParam["max_desired_speed"]);
 	verordnungsindex = stod(secParam["pl_force_index"]);
