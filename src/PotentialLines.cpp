@@ -54,20 +54,14 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors, front_neighbors_size);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
 	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
-	auto [fy_lower_boundary, fy_upper_boundary] = calculateBoundaryForces(ego, LowerLong, UpperLong);
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
 	fx = ax_desired + nudge_index * fx_nudge + repulse_index * fx_repluse;
 	fy = ay_desired + nudge_index * fy_nudge + repulse_index * fy_repluse + fy_pl;
 	// Consider the boundary control
-	double mid = (UpperLong + LowerLong) * 0.5;
-	if (ego->getY() >= mid) {
-		fy = MIN(fy, fy_upper_boundary);
-	}
-	else {
-		fy = MAX(fy, fy_lower_boundary);
-	};
+	fy = controlRoadBoundary(ego, fy);
+
 	return std::make_tuple(fx, fy);
 }
 
@@ -142,13 +136,21 @@ double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upp
 	return plForce;
 }
 
-std::tuple<double, double> PotentialLines::calculateBoundaryForces(Car* ego, double lower_bound, double upper_bound) {
-	double upper_diff = upper_bound - ego->getY();
-	double upper_bound_force = kpBoundary * upper_diff - kdBoundary * ego->getSpeedY();
+double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
+	double step = get_time_step_length();
+	double road_width = get_edge_width(ego->getCurrentEdge());
 
-	double lower_diff = lower_bound - ego->getY();
-	double lower_bound_force = kpBoundary * lower_diff - kdBoundary * ego->getSpeedY();
-	return std::make_tuple(lower_bound_force, upper_bound_force);
+	double upper_diff = road_width - (ego->getY() + ego->getWidth() / 2.0);
+	double speed_to_reach_up = upper_diff / step;
+	double upper_lim = (speed_to_reach_up - ego->getSpeedY()) / step;
+
+	double lower_diff = ego->getY() - ego->getWidth() / 2.0;
+	double speed_to_reach_down = -lower_diff / step;
+	double lower_lim = (speed_to_reach_down - ego->getSpeedY()) / step;
+
+	double fy = MIN(ay, upper_lim);
+	fy = MAX(fy, lower_lim);
+	return fy;
 }
 
 double PotentialLines::mixed_normal_cdf(double x) {

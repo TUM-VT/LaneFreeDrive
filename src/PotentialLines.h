@@ -29,7 +29,8 @@ private:
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
 
-	std::tuple<double, double> calculateBoundaryForces(Car* ego, double lower_bound, double upper_bound);
+	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
+	double controlRoadBoundary(Car* ego, double ay);
 
 	double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound);
 
