@@ -1,4 +1,5 @@
-﻿#include <stdio.h>
+﻿#pragma once
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
@@ -17,6 +18,8 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+using std::map;
+using std::string;
 
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))
@@ -51,12 +54,28 @@ namespace fs = std::filesystem;
 #define mu2 32.0
 #define sigma2 1.0
 
-Car::Car(NumericalID numID) {
+Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies) {
 	width =  get_veh_width(numID);
 	length = get_veh_length(numID);
 	this->numID = numID;
 	typeName = get_veh_type_name(numID);
 	vehName = get_vehicle_name(numID);
+
+	auto itm = config.find("Vehicle Models");
+	map<string, string> usedModelsMap = itm->second;
+
+	for (const auto& entry : usedModelsMap) {
+		string object_type = entry.first;
+		string model_type = usedModelsMap[object_type];
+		if (typeName.compare(0, object_type.length(), object_type) == 0) {
+			try {
+				lftstrategy = strategies.at(model_type);
+			}
+			catch (const std::out_of_range& e) {
+				throw std::invalid_argument("No suitable LFT strategy found for vtype " + typeName + ". Check Vehicle Models in config file.");
+			}
+		}
+	}
 }
 
 void Car::applyAcceleration() {

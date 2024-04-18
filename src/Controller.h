@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <string>
+#include <unordered_set>
 #ifdef CONTROLLER_H
 #define EXTERN_C /* nothing */
 #else
@@ -28,8 +29,7 @@ protected:
 
 class Car {
 public:
-	Car(NumericalID numID);
-	Car() {};
+	Car(NumericalID numID, iniMap config, std::map<std::string, LFTStrategy*> strategies);
 	void update();
 	void applyAcceleration();
 
@@ -46,6 +46,7 @@ public:
 	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
+	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
 protected:
 	double width;

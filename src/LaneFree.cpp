@@ -6,6 +6,7 @@
 #include <SimpleIni.h>
 #include <map>
 #include <filesystem>
+#include <unordered_set>
 #include "Controller.h"
 #include "PotentialLines.h"
 #include "StripBasedHuman.h"
@@ -63,8 +64,8 @@ namespace fs = std::filesystem;
 
 map<NumericalID, Car*> carsMap;
 map<string, LFTStrategy*> strategies;
-map<string, LFTStrategy*> used_strategies;
-map<string, string> usedModelsMap;
+std::unordered_set<LFTStrategy*> used_strategies;
+iniMap config;
 
 iniMap readConfigFile(char* file_name) {
 	// Get path of the dll plugin for the lanefree traffic
@@ -130,11 +131,9 @@ iniMap readConfigFileFallback(char* config_file, char* default_file) {
 }
 
 void simulation_initialize() {
-	iniMap config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
-	auto it = config.find("Vehicle Models");
-	usedModelsMap = it->second;
 
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
@@ -212,33 +211,17 @@ void simulation_step() {
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
 		if (carsMap.count(numID) == 0) {
-			Car* car = new Car(numID);
+			Car* car = new Car(numID, config, strategies);
 			carsMap[numID] = car;
-			string veh_type = car->getTypeName();
-			for (const auto& entry : usedModelsMap) {
-				string object_type = entry.first;
-				string model_type = usedModelsMap[object_type];
-				if (veh_type.compare(0, object_type.length(), object_type) == 0) {
-					auto it = strategies.find(model_type);
-					if (it != strategies.end()) {
-						LFTStrategy* strategy = it->second;
-						car->setLFTStrategy(strategy);
-						used_strategies[model_type] = strategy;
-					}
-					else {
-						throw std::invalid_argument("No suitable LFT strategy found for vtype " + veh_type
-							+ ". Check Vehicle Models in config file.");
-					}
-				}
-			}
+			used_strategies.insert(car->getLFTStrategy());
 		}
 		carsMap[numID]->update();
 	}
 
 	// Update the strategies
-	for (const auto& entry : used_strategies) {
-		entry.second->setCarsMap(carsMap);
-		entry.second->update();
+	for (const auto& strategy : used_strategies) {
+		strategy->setCarsMap(carsMap);
+		strategy->update();
 	}
 
 	for (int i = 0; i < n_myedges; i++) {
