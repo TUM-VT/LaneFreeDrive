@@ -70,6 +70,25 @@ void Car::update() {
 	x = get_position_x(numID);
 	y = get_position_y(numID);
 	currentEdge = get_edge_of_vehicle(numID);
+	desiredSpeed = get_desired_speed(numID);
+}
+
+std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
+	size_t size;
+	NumericalID* neighbors;
+	std::vector<Car*> neighborCars = {};
+	if (distance >= 0) {
+		neighbors = get_all_neighbor_ids_front(ego->getNumId(), distance, 0, &size);
+	}
+	else {
+		neighbors = get_all_neighbor_ids_back(ego->getNumId(), distance, 0, &size);
+	}
+
+	for (int i = 0; i < size; i++) {
+		NumericalID numID = neighbors[i];
+		neighborCars.push_back(carsMap[numID]);
+	}
+	return neighborCars;
 }
 
 static double U_lemma3

@@ -19,6 +19,7 @@ public:
 	LFTStrategy(iniMap config){};
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
+	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
 
 protected:
@@ -41,6 +42,7 @@ public:
 	double getY() { return y; }
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
+	double getDesiredSpeed() { return desiredSpeed; }
 	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
@@ -52,6 +54,7 @@ protected:
 	double speedY;
 	double x;
 	double y;
+	double desiredSpeed;
 	std::string typeName;
 	std::string vehName;
 	NumericalID numID;
