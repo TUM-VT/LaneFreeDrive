@@ -22,9 +22,12 @@ public:
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
 	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
+	static bool isCircular() { return circular; }
+	static void setCircular(iniMap config);
 
 protected:
 	std::map<NumericalID, Car*> carsMap;
+	static bool circular;
 };
 
 class Car {

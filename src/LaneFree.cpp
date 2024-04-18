@@ -132,6 +132,7 @@ iniMap readConfigFileFallback(char* config_file, char* default_file) {
 
 void simulation_initialize() {
 	config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 
@@ -443,7 +444,7 @@ void event_vehicle_enter(NumericalID veh_id) {
 	char* v_type = get_veh_type_name(veh_id);
 	int desired_speed = generate_desired_speed();
 	set_desired_speed(veh_id, desired_speed);
-	set_circular_movement(veh_id, false);
+	set_circular_movement(veh_id, LFTStrategy::isCircular());
 
 }
 

@@ -54,6 +54,14 @@ using std::string;
 #define mu2 32.0
 #define sigma2 1.0
 
+void LFTStrategy::setCircular(iniMap config) {
+	auto it = config.find("General Parameters");
+	int circular_int = std::stoi(it->second["circular_movement"]);
+	LFTStrategy::circular = (circular_int > 0)? true: false;
+}
+
+bool LFTStrategy::circular = false;
+
 Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies) {
 	width =  get_veh_width(numID);
 	length = get_veh_length(numID);
