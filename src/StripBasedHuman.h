@@ -38,7 +38,6 @@ private:
 	// Calculates the position of the main and upper strip of the vehicle
 	int calulcateStripPos(Car* car);
 	std::tuple<int, int> calculateStripInx(Car* car);
-	std::vector<std::tuple<Car*, int>> calculateLeaders(Car* ego, std::vector<Car*> front_neighbours);
 	
 };
 
@@ -58,27 +57,23 @@ private:
 	double LaneChangeThreshold;
 	double Lambda;
 	std::map<Car*, StripInfo> occupancyMap;
-	std::map<Car*, double> driverMemory;
+	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<NumericalID, EdgeStrips*> edgeStrips;
 
 	std::map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego);
 
-	std::tuple<int, double, Car*> calculateLeaderFromSafeVelMap(Car* ego, std::map<int, std::tuple<double, Car*>> safeVelMap);
-
-	std::tuple<std::vector<Car*>, std::vector<Car*>> calculateFollowerLeader(Car* ego, std::vector<int> strip_indices);
+	std::vector<Car*> calculateLeadersOverlap(Car* ego, std::vector<Car*> front_cars);
 
 	void updateStripChangeBenefit(Car* ego, std::map<int, std::tuple<double, Car*>> safeVelMap);
 
-	bool isSufficientGap(Car* ego, int strip_inx);
+	bool isSufficientGap(Car* ego, double x, double y);
 
 	bool isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips* strip);
 
 	// Calculates the acceleration required to stop the lateral movement
 	double calculateStopLatAcc(Car* car);
 
-	std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego);
-
-	// Calculate the safe velocity for the ego vehicle
-	double calculateSafeVelocity(Car* ego, Car* leader);
+	// Calculate the safe velocity for the ego vehicle with the leader at a certain gap
+	double calculateSafeVelocity(Car* ego, Car* leader, double gap);
 
 };

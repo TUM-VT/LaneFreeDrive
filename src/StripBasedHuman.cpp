@@ -103,105 +103,71 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	}
 }
 
-double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader) {
+double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader, double gap) {
 	double a = ReactionTime * Deccelerate;
-	double gap = leader->getX() - leader->getLength()/2.0 - ego->getX();
 	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
 	return vsafe;
 }
 
-bool compareCar(Car* car1, Car* car2) { return car1->getX() < car2->getX(); }
-
-tuple<vector<Car*>, vector<Car*>> StripBasedHuman::calculateFollowerLeader(Car* ego, vector<int> strip_indices) {
+vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> front_cars) {
 	EdgeStrips* strip = edgeStrips[ego->getCurrentEdge()];
-	double ego_x = ego->getX();
-	vector<Car*> leaders;
-	vector<Car*> followers;
-
-	for (int i : strip_indices) {
-		vector<Car*> strip_cars = strip->getStripVehicles(i);
-		Car* lead_car = nullptr;
-		Car* follow_car = nullptr;
-		for (Car* car : strip_cars) {
-			double diff_x = car->getX() - car->getLength()/2.0 - ego_x;
-			// The vector strip_cars is already arranged in order of longitudinal distance
-			if (diff_x > 0 && car->getNumId() != ego->getNumId()) {
-				lead_car = car;
-				break;
-			}
-			if (diff_x < 0 && car->getNumId() != ego->getNumId()) {
-				follow_car = car;
-			}
-		}
-		leaders.push_back(lead_car);
-		followers.push_back(lead_car);
-	}
-	return std::make_tuple(leaders, followers);
-}
-
-std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego) {
-	EdgeStrips* strip = edgeStrips[ego->getCurrentEdge()];
-	double ego_x = ego->getX();
-	std::map<int, tuple<double, Car*>> safe_velocity_map;
 	vector<int> indices(strip->getTotalNoStrips());
 	std::iota(indices.begin(), indices.end(), 0);
+	int numocc = strip->getVehicleStripInfo(ego).numOccupied;
+	vector<Car*> leaders(indices.size(), nullptr);
 
-	auto[followers, leaders] = calculateFollowerLeader(ego, indices);
-	for (int i : indices) {
-		Car* leader = leaders[i];
-		if (leader != nullptr) {
-			double safe_velocity = calculateSafeVelocity(ego, leader);
-			safe_velocity_map[i] = std::make_tuple(safe_velocity, leader);
-		}
-	}
-	return safe_velocity_map;
-}
-
-tuple<int, double, Car*> StripBasedHuman::calculateLeaderFromSafeVelMap(Car* ego, std::map<int, tuple<double, Car*>> safeVelMap) {
-	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
-	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
-	double ego_x = ego->getX();
-	int ego_inx = ego_strip_info.mainInx;
-	int ego_nocc = ego_strip_info.numOccupied;
-	int upper_ego_inx = ego_inx + ego_nocc;
-	double closest_diff = 1e12;
-	Car* leader = nullptr;
-	double closest_vsafe, closest_inx;
-
-	// For cars overlapping for right side
-	for (int i = 1; i < ego_nocc; i++) {
-		int inx = ego_inx - i;
-		if (safeVelMap.find(inx) != safeVelMap.end()) {
-			auto [vsafe, car] = safeVelMap[inx];
-			double diff = car->getX() - car->getLength()/2.0 - ego_x;
-			if (diff < closest_diff && diff < FrontDistance) {
-				int car_nocc = ego_strip->getVehicleStripInfo(ego).numOccupied;
-				// Does the car strips overlap with ego?
-				if (inx + car_nocc <= upper_ego_inx) {
-					closest_diff = diff;
-					leader = car;
-					closest_vsafe = vsafe;
-					closest_inx = inx;
+	int last_upper = -1;
+	for (int lower_inx : indices) {
+		int upper_inx = std::min(lower_inx + numocc, (int)indices.size() - 1);
+		if (lower_inx >= last_upper) {
+			for (size_t i = 0; i < front_cars.size(); i++) {
+				Car* car = front_cars[i];
+				StripInfo* info = &strip->getVehicleStripInfo(car);
+				int car_lw = info->mainInx;
+				int car_up = car_lw + info->numOccupied;
+				if ((lower_inx <= car_lw && car_lw <= upper_inx) || (lower_inx <= car_up && car_up <= upper_inx)) {
+					last_upper = upper_inx;
+					for (int k = lower_inx; k <= std::min(upper_inx, car_up); k++) {
+						leaders[k] = car;
+					}
+					if (lower_inx > car_up) {
+						front_cars.erase(front_cars.begin() + i);
+					}
+					break;
 				}
 			}
 		}
-	}
 
-	// For cars overlapping for left side
-	for (int i = 0; i < ego_nocc; i++) {
-		int inx = ego_inx + i;
-		if (safeVelMap.find(inx) != safeVelMap.end()) {
-			auto [vsafe, car] = safeVelMap[inx];
-			double diff = car->getX() - car->getLength()/2.0 - ego_x;
-			if (diff < closest_diff && diff < FrontDistance) {
-				closest_diff = diff;
-				leader = car;
-				closest_vsafe = vsafe;
-				closest_inx = inx;
-			}
+	}
+	return leaders;
+}
+
+
+std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego) {
+	double ego_x = ego->getX();
+	vector<Car*> front_cars;
+	map<Car*, double> safe_vels;
+	// Because getNeighbours measures distances from mid-points, some vehicles may not really be in front
+	for (Car* car : getNeighbours(ego, FrontDistance)) {
+		double gap = car->getX() - car->getLength() / 2.0 - (ego_x + ego->getLength() / 2.0);
+		if (gap > 0) {
+			front_cars.push_back(car);
+			safe_vels[car] = calculateSafeVelocity(ego, car, gap);
 		}
 	}
-	return std::make_tuple(closest_inx, closest_vsafe, leader);
+	vector<Car*> leaders = calculateLeadersOverlap(ego, front_cars);
+	std::map<int, tuple<double, Car*>> safe_velocity_map;
+	for (int i = 0; i < leaders.size(); i++) {
+		Car* lead = leaders[i];
+		if (lead != nullptr) {
+			safe_velocity_map[i] = std::make_tuple(safe_vels[lead], lead);
+		}
+		else {
+			safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
+		}
+	}
+
+	return safe_velocity_map;
 }
 
 void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<double, Car*>> safeVelMap) {
@@ -212,8 +178,8 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<dou
 
 	double vsafe_current = vel_max;
 	int main_inx = ego_strip_info.mainInx;
-	if (safeVelMap.find(main_inx) != safeVelMap.end()) {
-		auto [vsafe, car] = safeVelMap[main_inx];
+	auto [vsafe, car] = safeVelMap[main_inx];
+	if (car != nullptr) {
 		vsafe_current = vsafe;
 	}
 	
@@ -221,45 +187,68 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<dou
 	double left = 0;
 	for (int inx = 0; inx < total_strips; inx++) {
 		double vsafe_neighbour = vel_max;
-		if (safeVelMap.find(inx) != safeVelMap.end()) {
-			auto [vsafe, car] = safeVelMap[inx];
+		auto [vsafe, car] = safeVelMap[inx];
+		if (car != nullptr) {
 			vsafe_neighbour = vsafe;
 		}
+
 		double diff_inx = std::abs(main_inx - inx);
 		double benefit = ((vsafe_neighbour - vsafe_current) / vel_max) * std::exp(-Lambda * diff_inx);
-		if (inx < main_inx) { right += benefit; }
-		else if (inx > main_inx) { left += benefit; }
+		if (inx < main_inx) { 
+			right += benefit; 
+		}
+		else if (inx > main_inx) { 
+			left += benefit; 
+		}
+	}
+
+	// Initiate driver memory for new cars
+	if (driverMemory.find(ego) == driverMemory.end()) {
+		driverMemory[ego] = { 0, 0 };
 	}
 
 	if (left > 0) {
-		driverMemory[ego] += left;
-	}
-	else if (right > 0) {
-		driverMemory[ego] += right;
+		driverMemory[ego][0] += left;
 	}
 	else {
-		driverMemory[ego] /= 2.0;
+		driverMemory[ego][0] /= 2.0;
+	}
+
+	if (right > 0) {
+		driverMemory[ego][1] += right;
+	}
+	else {
+		driverMemory[ego][1] /= 2.0;
 	}
 
 }
 
-bool StripBasedHuman::isSufficientGap(Car* ego, int strip_inx) {
-	auto [followers, leaders] = calculateFollowerLeader(ego, { strip_inx });
+bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y) {
 	double delta_t = get_time_step_length();
-	bool sufficient_gap = true;
-	double leader_gap, follow_gap;
-
 	double ego_nextx = ego->getX() + delta_t * ego->getSpeedX();
-	if (leaders[0] != nullptr) {
-		double leader_nextx = leaders[0]->getX() + delta_t * leaders[0]->getSpeedX();
-		if (std::abs(ego_nextx - leader_nextx - leaders[0]->getLength()/2.0) < 0) {
-			sufficient_gap = false;
-		}
-	}
-	if (followers[0] != nullptr) {
-		double follower_nextx = followers[0]->getX() + delta_t * followers[0]->getSpeedX();
-		if (std::abs(ego_nextx - follower_nextx - ego->getLength()/2.0) < 0) {
-			sufficient_gap = false;
+
+	double ego_lw_x = x - ego->getLength() / 2.0;
+	double ego_up_x = x + ego->getLength() / 2.0;
+	double ego_lw_y = y - ego->getWidth() / 2.0;
+	double ego_up_y = y + ego->getWidth() / 2.0;
+
+	double delta_dist = ego->getLength() + ego->getSpeedX() * (delta_t + ReactionTime) + 5;
+	vector<Car*> front_cars = getNeighbours(ego, delta_dist);
+	vector<Car*> back_cars = getNeighbours(ego, -delta_dist);
+	bool sufficient_gap = true;
+
+	for (vector<Car*> neighbours : { front_cars, back_cars }) {
+		for (Car* car : neighbours) {
+			double car_lw_x = car->getX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
+			double car_up_x = car->getX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
+
+			if ((ego_lw_x <= car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x <= ego_up_x)) {
+				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - car->getWidth() / 2.0;
+				double car_up_y = car->getY() + delta_t * car->getSpeedY() + car->getWidth() / 2.0;
+				if ((ego_lw_y <= car_lw_y <= ego_up_y) || (ego_up_y <= car_up_y <= ego_up_y)) {
+					sufficient_gap = false;
+				}
+			}
 		}
 	}
 	return sufficient_gap;
@@ -274,27 +263,6 @@ bool StripBasedHuman::isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips
 		violation = true;
 	}
 	return violation;
-}
-
-std::tuple<bool, bool> StripBasedHuman::isLaneChangePossible(Car* ego) {
-	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
-	int ego_inx = ego_strip->getVehicleStripInfo(ego).mainInx;
-	int total_strips = ego_strip->getTotalNoStrips();
-	
-	bool right_side = false;
-	if (ego_inx > 0) {
-		right_side = isSufficientGap(ego, ego_inx - 1);
-		right_side = right_side && !isCrossingRoadBoundary(ego, ego_inx - 1, ego_strip);
-	}
-
-	bool left_side = false;
-	if (ego_inx < total_strips - 1) {
-		left_side = isSufficientGap(ego, ego_inx + 1);
-		left_side = left_side && !isCrossingRoadBoundary(ego, ego_inx + 1, ego_strip);
-	}
-
-	return std::make_tuple(right_side, left_side);
-	
 }
 
 double StripBasedHuman::calculateStopLatAcc(Car* car) {
@@ -312,7 +280,8 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
 
 	/* Calculate the longitudinal acceleration */
-	auto [strip_inx, vsafe_x, leader] = calculateLeaderFromSafeVelMap(ego, safe_vel_map);
+	auto [vsafe_x, leader] = safe_vel_map[ego_strip_info.mainInx];
+
 	double desired_speed = get_desired_speed(ego->getNumId());
 	double time_step = get_time_step_length();
 	// The max velocity possible in the next time step
@@ -335,10 +304,12 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	/* Calculate lateral acceleration */
 	double ay = 0;
 	updateStripChangeBenefit(ego, safe_vel_map);
-	double benefit = driverMemory[ego];
 
-	if (abs(benefit) > LaneChangeThreshold) {
-		int delta_inx = (benefit > 0) ? 1 : -1;
+	double left_benefit = driverMemory[ego][0];
+	double right_benefit = driverMemory[ego][1];
+
+	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
+		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
 		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx);
 		double current_y = ego->getY();
 		double width = ego->getWidth();
@@ -350,8 +321,9 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 
 		// Check if the lane change is possible
 		if (ay != 0) {
-			auto [bool_right, bool_left] = isLaneChangePossible(ego);
-			if ((benefit < 0 && !bool_right) || (benefit > 0 && !bool_left)) {
+			bool boundary_cross = isCrossingRoadBoundary(ego, ego_strip_info.mainInx + delta_inx, ego_strip);
+			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y);
+			if (!boundary_cross || !sufficient_gap) {
 				ay = calculateStopLatAcc(ego);
 			}
 		}
