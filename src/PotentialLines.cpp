@@ -43,13 +43,11 @@ PotentialLines::PotentialLines(iniMap config) {
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	int cross_edge = 0;
-	size_t front_neighbors_size;
-	size_t back_neighbors_size;
-	NumericalID* front_neighbors = get_all_neighbor_ids_front(ego->getNumId(), this->FrontDistnce, cross_edge, &front_neighbors_size);
-	NumericalID* back_neighbors = get_all_neighbor_ids_back(ego->getNumId(), this->BackDistance, cross_edge, &back_neighbors_size);
+	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
+	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
 
-	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors, back_neighbors_size);
-	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors, front_neighbors_size);
+	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, front_neighbors);
+	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, back_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
 	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
 
@@ -63,12 +61,9 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	return std::make_tuple(fx, fy);
 }
 
-std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, NumericalID* other_ids, size_t n_others) {
+std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours) {
 	double totalFX{ 0 }, totalFy{ 0 };
-	for (int f = 0; f < n_others; f++) {
-		NumericalID neighbour_id = other_ids[f];
-		Car* neighbour = carsMap[neighbour_id];
-
+	for (Car* neighbour : neighbours){
 		auto [major, minor] = calculatePotentialFunMajorMinorAxis(ego, neighbour);
 		auto [fx, fy] = calculateForces(ego, neighbour, major, minor);
 		totalFX += fx;

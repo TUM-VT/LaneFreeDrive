@@ -20,7 +20,7 @@ private:
 	double nudge_index, repulse_index;
 	int n, p, q;
 
-	std::tuple<double, double> calculateNeighbourForces(Car* ego, NumericalID* other_ids, size_t n_others);
+	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
 	std::tuple<double, double> calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour);
 
