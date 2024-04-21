@@ -30,8 +30,8 @@ std::tuple<double, double> RectangularHardBoundary::calculateDistanceToLeaveBoun
 
 	double car_upper_x = x + car->getLength() / 2.0;
 	double car_lower_x = x - car->getLength() / 2.0;
-	double car_upper_y = x + car->getWidth() / 2.0;
-	double car_lower_y = x - car->getWidth() / 2.0;
+	double car_upper_y = y + car->getWidth() / 2.0;
+	double car_lower_y = y - car->getWidth() / 2.0;
 
 	if ((car_lower_x > lower_x && car_lower_x < upper_x) || (car_upper_x > lower_x && car_upper_x < upper_x)) {
 		if (car->getX() > ego->getX()) {
