@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <unordered_set>
+#include "Boundary.h"
 #ifdef CONTROLLER_H
 #define EXTERN_C /* nothing */
 #else
@@ -12,6 +13,7 @@ typedef long long int NumericalID;
 using iniMap = std::map<std::string, std::map<std::string, std::string>>;
 
 class Car;
+class CarBoundary;
 
 class LFTStrategy {
 public:
@@ -48,6 +50,8 @@ public:
 	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
+	void setBoundary(CarBoundary* boundary) { this->boundary = boundary; }
+	CarBoundary* getBoundary() { return this->boundary; }
 	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
 protected:
@@ -63,6 +67,7 @@ protected:
 	NumericalID numID;
 	NumericalID currentEdge;
 	LFTStrategy* lftstrategy;
+	CarBoundary* boundary = nullptr;
 };
 // this is how you can define static variables
 EXTERN_C int example_extern_variable_static;

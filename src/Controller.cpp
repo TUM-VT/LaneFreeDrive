@@ -22,6 +22,7 @@ namespace fs = std::filesystem;
 using std::map;
 using std::string;
 
+std::unordered_set<std::string> vehTypesBoundaryError;
 
 void LFTStrategy::setCircular(iniMap config) {
 	auto it = config.find("General Parameters");
@@ -40,6 +41,8 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 
 	auto itm = config.find("Vehicle Models");
 	map<string, string> usedModelsMap = itm->second;
+	auto itb = config.find("Vehicle Boundaries");
+	map<string, string> usedModelsBoundaryMap = itb->second;
 
 	for (const auto& entry : usedModelsMap) {
 		string object_type = entry.first;
@@ -50,6 +53,24 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 			}
 			catch (const std::out_of_range& e) {
 				throw std::invalid_argument("No suitable LFT strategy found for vtype " + typeName + ". Check Vehicle Models in config file.");
+			}
+
+			try {
+				// Set the boundary object
+				string boundary_name = usedModelsBoundaryMap.at(object_type);
+				if (boundary_name == "RectangularHardBoundary") {
+					boundary = new RectangularHardBoundary(config, this);
+				}
+				else {
+					throw std::invalid_argument("The boundary type " + boundary_name + " does not exist for vtype " + typeName);
+				}
+			}
+			catch (const std::out_of_range& e) {
+				if (vehTypesBoundaryError.find(typeName) == vehTypesBoundaryError.end()) {
+					std::cerr << "\nNo Boundary type given for vtype " + typeName + ". Check Vehicle Boundaries in config file.";
+					vehTypesBoundaryError.insert(typeName);
+				}
+				
 			}
 		}
 	}
@@ -67,6 +88,9 @@ void Car::update() {
 	y = get_position_y(numID);
 	currentEdge = get_edge_of_vehicle(numID);
 	desiredSpeed = get_desired_speed(numID);
+	if (boundary != nullptr) {
+		boundary->updateBoundary();
+	}
 }
 
 std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
