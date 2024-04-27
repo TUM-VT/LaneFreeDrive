@@ -52,6 +52,12 @@ iniMap readConfigFile(char* file_name) {
 		for (const auto& key : keys)
 		{
 			string value = ini.GetValue(section.pItem, key.pItem);
+			for (string s : {"#", "\t"}) {
+				size_t commentPos = value.find_first_of(s);
+				if (commentPos != string::npos) {
+					value = value.substr(0, commentPos);
+				}
+			}
 			data[section.pItem][key.pItem] = value;
 		}
 	}
