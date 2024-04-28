@@ -46,8 +46,8 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
 	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
 
-	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, front_neighbors);
-	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, back_neighbors);
+	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
+	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
 	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
 
