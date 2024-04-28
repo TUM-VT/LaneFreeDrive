@@ -76,6 +76,22 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 	}
 }
 
+Car::Car(const Car& car) {
+	width = car.width;
+	length = car.length;
+	numID = car.numID;
+	typeName = car.typeName;
+	vehName = car.vehName;
+	x = car.x;
+	y = car.y;
+	speedX = car.speedX;
+	speedY = car.speedY;
+	desiredSpeed = car.desiredSpeed;
+	currentEdge = car.currentEdge;
+	lftstrategy = car.lftstrategy;
+	boundary = car.boundary;
+}
+
 void Car::applyAcceleration() {
 	auto [ax, ay] = lftstrategy->calculateAcceleration(this);
 	apply_acceleration(numID, ax, ay);
@@ -108,6 +124,44 @@ std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
 		NumericalID numID = neighbors[i];
 		neighborCars.push_back(carsMap[numID]);
 	}
+
+	if (circular) {
+		map<int, double> new_car_posx;
+		double edge_len = get_edge_length(ego->getCurrentEdge());
+		
+		if (distance > 0 && ego->getX() > (edge_len - distance)) {
+			for (int i = 0; i < neighborCars.size(); i++) {
+				Car* car = neighborCars[i];
+				if (car->getX() <= distance) {
+					new_car_posx[i] = std::abs(car->getX()) + edge_len;
+				}
+			}
+		}
+
+		else if (distance < 0 && ego->getX() < -distance) {
+			for (int i = 0; i < neighborCars.size(); i++) {
+				Car* car = neighborCars[i];
+				if (car->getX() > edge_len + distance) {
+					new_car_posx[i] = car->getX() - edge_len;
+				}
+			}
+		}
+
+		for (auto const& [index, posx] : new_car_posx) {
+			Car* car = neighborCars[index];
+			// Create a new car object with the same properties as the original
+			Car* new_car = new Car(*car);
+			new_car->setIsCopy(true);
+			new_car->setX(posx);
+			// Create a copy of the Boundary object and set the new car as the owner
+			if (car->getBoundary() != nullptr) {
+				new_car->setBoundary(new RectangularHardBoundary(config, new_car));
+				new_car->getBoundary()->updateBoundary();
+			}
+			neighborCars[index] = new_car;
+		}
+	}
+
 	return neighborCars;
 }
 

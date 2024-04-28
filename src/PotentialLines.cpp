@@ -58,6 +58,15 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	// Consider the boundary control
 	fy = controlRoadBoundary(ego, fy);
 
+	for (std::vector<Car*> neighbours : { front_neighbors, back_neighbors }) {
+		for (Car* car : neighbours) {
+			if (car->getIsCopy()) {
+				delete car->getBoundary();
+				delete car;
+			}
+		}
+	}
+
 	return std::make_tuple(fx, fy);
 }
 
