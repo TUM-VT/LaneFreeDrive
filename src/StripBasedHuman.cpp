@@ -118,13 +118,13 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 
 	int last_upper = -1;
 	for (int lower_inx : indices) {
-		int upper_inx = std::min(lower_inx + numocc, (int)indices.size() - 1);
-		if (lower_inx >= last_upper) {
+		int upper_inx = std::min(lower_inx + numocc - 1, (int)indices.size() - 1);
+		if (lower_inx > last_upper) {
 			for (size_t i = 0; i < front_cars.size(); i++) {
 				Car* car = front_cars[i];
 				StripInfo* info = &strip->getVehicleStripInfo(car);
 				int car_lw = info->mainInx;
-				int car_up = car_lw + info->numOccupied;
+				int car_up = car_lw + info->numOccupied - 1;
 				if ((lower_inx <= car_lw && car_lw <= upper_inx) || (lower_inx <= car_up && car_up <= upper_inx)) {
 					last_upper = upper_inx;
 					for (int k = lower_inx; k <= std::min(upper_inx, car_up); k++) {
