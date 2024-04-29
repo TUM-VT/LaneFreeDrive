@@ -230,16 +230,15 @@ bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y) {
 	vector<Car*> front_cars = getNeighbours(ego, delta_dist);
 	vector<Car*> back_cars = getNeighbours(ego, -delta_dist);
 	bool sufficient_gap = true;
-
 	for (vector<Car*> neighbours : { front_cars, back_cars }) {
 		for (Car* car : neighbours) {
 			double car_lw_x = car->getX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
 			double car_up_x = car->getX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
 
-			if ((ego_lw_x <= car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x <= ego_up_x)) {
+			if ((ego_lw_x <= car_lw_x && car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x && car_up_x <= ego_up_x)) {
 				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - car->getWidth() / 2.0;
 				double car_up_y = car->getY() + delta_t * car->getSpeedY() + car->getWidth() / 2.0;
-				if ((ego_lw_y <= car_lw_y <= ego_up_y) || (ego_up_y <= car_up_y <= ego_up_y)) {
+				if ((ego_lw_y <= car_lw_y && car_lw_y <= ego_up_y) || (ego_up_y <= car_up_y && car_up_y <= ego_up_y)) {
 					sufficient_gap = false;
 				}
 			}
