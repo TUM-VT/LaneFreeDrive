@@ -115,29 +115,23 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 	std::iota(indices.begin(), indices.end(), 0);
 	int numocc = strip->getVehicleStripInfo(ego).numOccupied;
 	vector<Car*> leaders(indices.size(), nullptr);
+	std::set<int> incl_indices;
 
-	int last_upper = -1;
-	for (int lower_inx : indices) {
-		int upper_inx = std::min(lower_inx + numocc - 1, (int)indices.size() - 1);
-		if (lower_inx > last_upper) {
-			for (size_t i = 0; i < front_cars.size(); i++) {
-				Car* car = front_cars[i];
-				StripInfo* info = &strip->getVehicleStripInfo(car);
-				int car_lw = info->mainInx;
-				int car_up = car_lw + info->numOccupied - 1;
-				if ((lower_inx <= car_lw && car_lw <= upper_inx) || (lower_inx <= car_up && car_up <= upper_inx)) {
-					last_upper = upper_inx;
-					for (int k = lower_inx; k <= std::min(upper_inx, car_up); k++) {
-						leaders[k] = car;
-					}
-					if (lower_inx > car_up) {
-						front_cars.erase(front_cars.begin() + i);
-					}
-					break;
-				}
+	for (size_t i = 0; i < front_cars.size(); i++) {
+		Car* car = front_cars[i];
+		StripInfo* info = &strip->getVehicleStripInfo(car);
+		int car_lw = info->mainInx;
+		int car_up = car_lw + info->numOccupied - 1;
+
+		int overlap_lower = std::max(car_lw - numocc + 1, 0);
+		int overlap_upper = std::min(car_up + numocc - 1, (int)indices.size() - 1);
+
+		for (int k = overlap_lower; k <= overlap_upper; k++) {
+			if (incl_indices.find(k) == incl_indices.end()) {
+				leaders[k] = car;
+				incl_indices.insert(k);
 			}
 		}
-
 	}
 	return leaders;
 }
