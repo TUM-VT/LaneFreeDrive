@@ -137,17 +137,12 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 }
 
 
-std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego) {
+std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
 	double ego_x = ego->getX();
-	vector<Car*> front_cars;
 	map<Car*, double> safe_vels;
-	// Because getNeighbours measures distances from mid-points, some vehicles may not really be in front
-	for (Car* car : getNeighbours(ego, FrontDistance)) {
+	for (Car* car : front_cars) {
 		double gap = car->getX() - car->getLength() / 2.0 - (ego_x + ego->getLength() / 2.0);
-		if (gap > 0) {
-			front_cars.push_back(car);
-			safe_vels[car] = calculateSafeVelocity(ego, car, gap);
-		}
+		safe_vels[car] = calculateSafeVelocity(ego, car, gap);
 	}
 	vector<Car*> leaders = calculateLeadersOverlap(ego, front_cars);
 	std::map<int, tuple<double, Car*>> safe_velocity_map;
@@ -160,7 +155,6 @@ std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car*
 			safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
 		}
 	}
-
 	return safe_velocity_map;
 }
 
@@ -217,7 +211,7 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<dou
 
 }
 
-bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y) {
+bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y, vector<Car*> front_cars, vector<Car*> back_cars) {
 	double delta_t = get_time_step_length();
 	double ego_nextx = ego->getX() + delta_t * ego->getSpeedX();
 
@@ -226,9 +220,6 @@ bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y) {
 	double ego_lw_y = y - ego->getWidth() / 2.0;
 	double ego_up_y = y + ego->getWidth() / 2.0;
 
-	double delta_dist = ego->getLength() + ego->getSpeedX() * (delta_t + ReactionTime) + 5;
-	vector<Car*> front_cars = getNeighbours(ego, delta_dist);
-	vector<Car*> back_cars = getNeighbours(ego, -delta_dist);
 	bool sufficient_gap = true;
 	for (vector<Car*> neighbours : { front_cars, back_cars }) {
 		for (Car* car : neighbours) {
@@ -258,19 +249,15 @@ bool StripBasedHuman::isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStrips
 	return violation;
 }
 
-double StripBasedHuman::calculateStopLatAcc(Car* car) {
-	double time_step = get_time_step_length();
-	double current_speed = car->getSpeedY();
-	int sign = (current_speed > 0) ? 1 : -1;
-	double ay = -sign * current_speed / time_step;
-	return ay;
-}
-
 
 tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
-	std::map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego);
+	vector<Car*> front_cars = getNeighbours(ego, FrontDistance);
+	vector<Car*> back_cars = getNeighbours(ego, -FrontDistance);
+
 	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
 	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
+
+	std::map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
 
 	/* Calculate the longitudinal acceleration */
 	auto [vsafe_x, leader] = safe_vel_map[ego_strip_info.mainInx];
@@ -295,12 +282,12 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	}
 
 	/* Calculate lateral acceleration */
-	double ay = 0;
 	updateStripChangeBenefit(ego, safe_vel_map);
 
 	double left_benefit = driverMemory[ego][0];
 	double right_benefit = driverMemory[ego][1];
 
+	double ay = - ego->getSpeedY() / time_step;
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
 		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx);
@@ -315,14 +302,22 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 		// Check if the lane change is possible
 		if (ay != 0) {
 			bool boundary_cross = isCrossingRoadBoundary(ego, ego_strip_info.mainInx + delta_inx, ego_strip);
-			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y);
-			if (!boundary_cross || !sufficient_gap) {
-				ay = calculateStopLatAcc(ego);
+			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y, front_cars, back_cars);
+			if (boundary_cross || !sufficient_gap) {
+				ay = -ego->getSpeedY();
 			}
 		}
 	}
-	else {
-		ay = calculateStopLatAcc(ego);
+
+	if (circular) {
+		for (std::vector<Car*> neighbours : { front_cars, back_cars }) {
+			for (Car* car : neighbours) {
+				if (car->getIsCopy()) {
+					delete car->getBoundary();
+					delete car;
+				}
+			}
+		}
 	}
 
 	return std::make_tuple(ax, ay);
