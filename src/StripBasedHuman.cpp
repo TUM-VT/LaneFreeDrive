@@ -104,9 +104,8 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 	vector<Car*> leaders(indices.size(), nullptr);
 	std::set<int> incl_indices;
 
-	for (size_t i = 0; i < front_cars.size(); i++) {
-		Car* car = front_cars[i];
-		StripInfo* info = &strip->getVehicleStripInfo(car);
+	for (Car* car: front_cars) {
+		StripInfo* info = &strip->getVehicleStripInfo(carsMap[car->getNumId()]);
 		int car_lw = info->mainInx;
 		int car_up = car_lw + info->numOccupied - 1;
 
