@@ -42,18 +42,8 @@ tuple<int, int> EdgeStrips::calculateStripInx(Car* car) {
 	return std::make_tuple(main_strip_inx, num_occupied);
 }
 
-vector<Car*> EdgeStrips::getStripVehicles(int index) {
-	vector<Car*> strip_cars;
-	auto it = stripOccupancyMap.find(index);
-	if (it != stripOccupancyMap.end()) {
-		strip_cars = it->second;
-	}
-	return strip_cars;
-}
-
 void EdgeStrips::updateOccupiedMap(std::map<NumericalID, Car*>& carsMap) {
 	carOccupancyMap.clear();
-	stripOccupancyMap.clear();
 	NumericalID n_edge_ids = get_all_ids_in_edge_size(edge_id);
 	NumericalID* ids_in_edge = get_all_ids_in_edge(edge_id);
 
@@ -64,14 +54,7 @@ void EdgeStrips::updateOccupiedMap(std::map<NumericalID, Car*>& carsMap) {
 		strip_info.mainInx = mainInx;
 		strip_info.numOccupied = upperInx;
 		carOccupancyMap[ego] = strip_info;
-		stripOccupancyMap[mainInx].push_back(ego);
 	}
-}
-
-int EdgeStrips::calulcateStripPos(Car* car) {
-	double y = car->getY();
-	double strip_y = strip_width * floor(y / strip_width);
-	return strip_y;
 }
 
 void StripBasedHuman::update() {

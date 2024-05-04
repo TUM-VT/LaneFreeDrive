@@ -22,7 +22,6 @@ class EdgeStrips {
 public:
 	EdgeStrips(NumericalID edge_id, double edge_width, double strip_width);
 	void updateOccupiedMap(std::map<NumericalID, Car*>& carsMap);
-	std::vector<Car*> getStripVehicles(int index);
 	StripInfo getVehicleStripInfo(Car* car);
 	int getTotalNoStrips() { return total_strips; }
 	double getYFromInx(int index);
@@ -34,9 +33,6 @@ private:
 	double strip_width;
 	int total_strips;
 	std::map<Car*, StripInfo> carOccupancyMap;
-	std::map<int, std::vector<Car*>> stripOccupancyMap;
-	// Calculates the position of the main and upper strip of the vehicle
-	int calulcateStripPos(Car* car);
 	std::tuple<int, int> calculateStripInx(Car* car);
 	
 };
