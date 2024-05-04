@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <numeric>
+#include <set>
 
 using std::map;
 using std::string;
