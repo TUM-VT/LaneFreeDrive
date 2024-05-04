@@ -34,6 +34,9 @@ tuple<int, int> EdgeStrips::calculateStripInx(Car* car) {
 	double lower_bound = car->getY() - car->getWidth() / 2.0;
 	double upper_bound = car->getY() + car->getWidth() / 2.0;
 	int main_strip_inx = floor(lower_bound / strip_width);
+	if (main_strip_inx < 0) {
+		main_strip_inx = 0;
+	}
 	int num_occupied = ceil(upper_bound / strip_width) - main_strip_inx;
 	return std::make_tuple(main_strip_inx, num_occupied);
 }
@@ -207,6 +210,14 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<dou
 	}
 	else {
 		driverMemory[ego][1] /= 2.0;
+	}
+
+	// If the driver is on the edges of the road, then set the corresponding driver memory to 0
+	if (ego_strip_info.mainInx <= 1) {
+		driverMemory[ego][1] = 0;
+	}
+	else if (ego_strip_info.mainInx + ego_strip_info.numOccupied >= total_strips) {
+		driverMemory[ego][0] = 0;
 	}
 
 }
