@@ -52,10 +52,13 @@ public:
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
 	double getDesiredSpeed() { return desiredSpeed; }
+	bool getIsCopy() { return isCopy; }
 	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
 	void setBoundary(CarBoundary* boundary) { this->boundary = boundary; }
+	void setX(double x) { this->x = x; }
+	void setIsCopy(bool isCopy) { this->isCopy = isCopy; }
 	CarBoundary* getBoundary() { return this->boundary; }
 	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
@@ -67,6 +70,7 @@ protected:
 	double x;
 	double y;
 	double desiredSpeed;
+	bool isCopy = false;
 	std::string typeName;
 	std::string vehName;
 	NumericalID numID;

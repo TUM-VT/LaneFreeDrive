@@ -129,7 +129,7 @@ std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
 		map<int, double> new_car_posx;
 		double edge_len = get_edge_length(ego->getCurrentEdge());
 		
-		if (distance > 0 && ego->getX() > (edge_len - distance)) {
+		if (distance > 0 && ego->getX() > (edge_len - distance - 10)) {
 			for (int i = 0; i < neighborCars.size(); i++) {
 				Car* car = neighborCars[i];
 				if (car->getX() <= distance) {
