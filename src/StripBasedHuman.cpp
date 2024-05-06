@@ -127,7 +127,7 @@ std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car*
 	double ego_x = ego->getX();
 	map<Car*, double> safe_vels;
 	for (Car* car : front_cars) {
-		double gap = car->getX() - car->getLength() / 2.0 - (ego_x + ego->getLength() / 2.0);
+		double gap = car->getCircularX() - car->getLength() / 2.0 - (ego_x + ego->getLength() / 2.0);
 		safe_vels[car] = calculateSafeVelocity(ego, car, gap);
 	}
 	vector<Car*> leaders = calculateLeadersOverlap(ego, front_cars);
@@ -217,8 +217,8 @@ bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y, vector<Car*>
 	bool sufficient_gap = true;
 	for (vector<Car*> neighbours : { front_cars, back_cars }) {
 		for (Car* car : neighbours) {
-			double car_lw_x = car->getX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
-			double car_up_x = car->getX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
+			double car_lw_x = car->getCircularX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
+			double car_up_x = car->getCircularX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
 
 			if ((ego_lw_x <= car_lw_x && car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x && car_up_x <= ego_up_x)) {
 				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - car->getWidth() / 2.0;
@@ -299,17 +299,6 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y, front_cars, back_cars);
 			if (boundary_cross || !sufficient_gap) {
 				ay = -ego->getSpeedY();
-			}
-		}
-	}
-
-	if (circular) {
-		for (std::vector<Car*> neighbours : { front_cars, back_cars }) {
-			for (Car* car : neighbours) {
-				if (car->getIsCopy()) {
-					delete car->getBoundary();
-					delete car;
-				}
 			}
 		}
 	}

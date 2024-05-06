@@ -22,7 +22,7 @@ public:
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
 	void setConfig(iniMap config) { this->config = config; }
-	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, it returns a modified copy of the car objects that crossed the boundary.
+	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, after calling getNeighbours, use getCircularX of Car to get the corrected x position of the vehicle.
 	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
 	static bool isCircular() { return circular; }
@@ -52,13 +52,13 @@ public:
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
 	double getDesiredSpeed() { return desiredSpeed; }
-	bool getIsCopy() { return isCopy; }
+	double getCircularX() { return circularX; }
 	NumericalID getCurrentEdge() { return currentEdge; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
 	void setBoundary(CarBoundary* boundary) { this->boundary = boundary; }
 	void setX(double x) { this->x = x; }
-	void setIsCopy(bool isCopy) { this->isCopy = isCopy; }
+	void setCircularX(double circularX) { this->circularX = circularX; }
 	CarBoundary* getBoundary() { return this->boundary; }
 	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
@@ -70,7 +70,8 @@ protected:
 	double x;
 	double y;
 	double desiredSpeed;
-	bool isCopy = false;
+	// This attribute is used to store the corrected x position of the vehicle after a call to the getNeighbours method of the LFTStrategy class.
+	double circularX;
 	std::string typeName;
 	std::string vehName;
 	NumericalID numID;

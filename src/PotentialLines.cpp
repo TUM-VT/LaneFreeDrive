@@ -58,14 +58,6 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	// Consider the boundary control
 	fy = controlRoadBoundary(ego, fy);
 
-	for (std::vector<Car*> neighbours : { front_neighbors, back_neighbors }) {
-		for (Car* car : neighbours) {
-			if (car->getIsCopy()) {
-				delete car->getBoundary();
-				delete car;
-			}
-		}
-	}
 
 	return std::make_tuple(fx, fy);
 }
@@ -98,7 +90,8 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 }
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
-	double rel_dist_x = fabs(ego->getX() - neighbour->getX());
+	double neighbour_x = neighbour->getCircularX();
+	double rel_dist_x = fabs(ego->getX() - neighbour_x);
 	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
 
 	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
@@ -107,11 +100,11 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 	double f = ForceIndex / (pow((item1 + item2), q) + 1);
 	double fx{ 0 }, fy{ 0 };
 	if (f > 0.001) {
-		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour->getX()));
-	fx = f * cos(theta);
+		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
+		fx = f * cos(theta);
 		fy = f * sin(theta);
 
-		double fx_sign = (ego->getX() < neighbour->getX()) ? -1 : 1;
+		double fx_sign = (ego->getX() < neighbour_x) ? -1 : 1;
 		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
 
 		fx = fx_sign * fabs(fx);
