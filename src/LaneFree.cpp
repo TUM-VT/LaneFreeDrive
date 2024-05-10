@@ -7,6 +7,8 @@
 #include <map>
 #include <filesystem>
 #include <unordered_set>
+#include <regex>
+#include <random>
 #include "Controller.h"
 #include "PotentialLines.h"
 #include "StripBasedHuman.h"
@@ -20,6 +22,7 @@
 
 using std::map;
 using std::string;
+using std::vector;
 using iniMap = map<string, map<string, string>>;
 namespace fs = std::filesystem;
 
@@ -97,8 +100,63 @@ iniMap readConfigFileFallback(char* config_file, char* default_file) {
 	return data;
 }
 
+void insert_vehicles() {
+	auto it = config.find("General Parameters");
+	std::string vehicle_init = it->second["vehicle_init"];
+	std::regex reg(",");
+	if (vehicle_init.compare("RANDOM") == 0) {
+		std::string route = it->second["routes"];
+
+		std::mt19937 rng(std::stoi(it->second["seed"]));
+		std::uniform_real_distribution<double> uni_x(std::stoi(it->second["lower_x"]), std::stoi(it->second["upper_x"]));
+		std::uniform_real_distribution<double> uni_y(std::stoi(it->second["lower_y"]), std::stoi(it->second["upper_y"]));
+		double min_distance = std::stod(it->second["seed"]);
+
+		std::string str = it->second["vehicle_types"];
+		std::vector<std::string> vehicle_types{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
+
+		str = it->second["vehicle_counts"];
+		std::vector<std::string> vehicle_counts{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
+
+		// Store vehicle positions to check for overlaps
+		std::vector<std::pair<double, double>> vehicle_positions;
+
+		for (int i = 0; i < vehicle_types.size(); i++){
+			int count = std::stoi(vehicle_counts[i]);
+			for (int j = 0; j < count; j++) {
+				std::string veh_name = vehicle_types[i] + "_" + std::to_string(j);
+				double x_val = uni_x(rng);
+				double y_val = uni_y(rng);
+
+				// Check if the new vehicle overlaps with existing ones
+				bool veh_remains = true;
+				while (veh_remains) {
+					x_val = uni_x(rng);
+					y_val = uni_y(rng);
+					bool overlaps = false;
+					for (const auto& pos : vehicle_positions) {
+						double distance = std::hypot(x_val - pos.first, y_val - pos.second);
+						if (distance < min_distance) {
+							overlaps = true;
+							break;
+						}
+					}
+
+					if (!overlaps) {
+						vehicle_positions.push_back(std::make_pair(x_val, y_val));
+						insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), x_val, y_val, 0, 0, 0, 0);
+						veh_remains = false;
+					}
+				}
+
+			}
+		}
+	}
+}
+
 void simulation_initialize() {
 	config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	insert_vehicles();
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
