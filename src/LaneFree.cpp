@@ -105,6 +105,7 @@ void insert_vehicles() {
 	std::string vehicle_init = it->second["vehicle_init"];
 	std::regex reg(",");
 	if (vehicle_init.compare("RANDOM") == 0) {
+		auto it = config.find("RANDOM Init");
 		std::string route = it->second["routes"];
 
 		std::mt19937 rng(std::stoi(it->second["seed"]));
