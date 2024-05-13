@@ -27,6 +27,8 @@ public:
 	virtual void update() {};
 	static bool isCircular() { return circular; }
 	static void setCircular(iniMap config);
+	// Extracts the parameters of section name with the prefix from the config file
+	std::map<std::string, std::map<std::string, std::string>> extractModelSpecificParams(iniMap config, std::string prefix);
 
 protected:
 	std::map<NumericalID, Car*> carsMap;

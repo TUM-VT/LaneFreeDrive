@@ -7,6 +7,7 @@
 #include <SimpleIni.h>
 #include <map>
 #include <filesystem>
+#include <regex>
 #ifdef __unix__
 #include "LaneFree_linux.h"
 #elif defined(WIN32)
@@ -28,6 +29,21 @@ void LFTStrategy::setCircular(iniMap config) {
 	auto it = config.find("General Parameters");
 	int circular_int = std::stoi(it->second["circular_movement"]);
 	LFTStrategy::circular = (circular_int > 0)? true: false;
+}
+
+map<string, map<string, string>> LFTStrategy::extractModelSpecificParams(iniMap config, string prefix) {
+	map<string, map<string, string>> params;
+	for (auto const& [key, val] : config) {
+		if (key.find(prefix) == 0) {
+			std::regex reg(",");
+			string mstring = key.substr(prefix.length());
+			std::vector<string> models{ std::sregex_token_iterator(mstring.begin(), mstring.end(), reg, -1), {} };
+			for (string model : models) {
+				params[model] = val;
+			}
+		}
+	}
+	return params;
 }
 
 bool LFTStrategy::circular = false;
