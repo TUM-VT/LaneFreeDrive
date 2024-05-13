@@ -21,7 +21,6 @@ public:
 	LFTStrategy(iniMap config){};
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
-	void setConfig(iniMap config) { this->config = config; }
 	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, after calling getNeighbours, use getCircularX of Car to get the corrected x position of the vehicle.
 	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
@@ -33,7 +32,6 @@ public:
 protected:
 	std::map<NumericalID, Car*> carsMap;
 	static bool circular;
-	iniMap config;
 };
 
 class Car {

@@ -161,10 +161,6 @@ void simulation_initialize() {
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
-	// TODO: Find better way of setting the config. It was introduced for the creation of new Boundary objects in the method getNeighbours of Car class.
-	for (LFTStrategy* strategy : { strategies["PotentialLines"], strategies["StripBasedHuman"] }) {
-		strategy->setConfig(config);
-	}
 
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
