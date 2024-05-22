@@ -48,6 +48,7 @@ public:
 	double getLength() { return length; }
 	std::string getTypeName() { return typeName; }
 	std::string getVehName() { return vehName; }
+	std::string getModelName() { return modelName; }
 	NumericalID getNumId() { return numID; }
 	double getX() { return x; }
 	double getY() { return y; }
@@ -76,6 +77,7 @@ protected:
 	double circularX;
 	std::string typeName;
 	std::string vehName;
+	std::string modelName;
 	NumericalID numID;
 	NumericalID currentEdge;
 	LFTStrategy* lftstrategy;

@@ -69,6 +69,7 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 		string object_type = entry.first;
 		string model_type = usedModelsMap[object_type];
 		if (typeName.compare(0, object_type.length(), object_type) == 0) {
+			modelName = object_type;
 			try {
 				lftstrategy = strategies.at(model_type);
 			}
@@ -103,6 +104,7 @@ Car::Car(const Car& car) {
 	numID = car.numID;
 	typeName = car.typeName;
 	vehName = car.vehName;
+	modelName = car.modelName;
 	x = car.x;
 	y = car.y;
 	speedX = car.speedX;

@@ -1,5 +1,6 @@
 #pragma once
 #include "Controller.h"
+#include <set>
 
 
 class PotentialLines : public LFTStrategy {
@@ -19,6 +20,9 @@ private:
 	double MINDesiredSpeed, MAXDesiredSpeed;
 	double nudge_index, repulse_index;
 	int n, p, q;
+	double ReactionTime;
+	double Deccelerate;
+	std::set<std::string> VSafeVehModels;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
@@ -27,6 +31,8 @@ private:
 	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
+
+	double calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors);
 
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);

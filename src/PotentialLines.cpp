@@ -39,6 +39,12 @@ PotentialLines::PotentialLines(iniMap config) {
 	verordnungsindex = stod(secParam["pl_force_index"]);
 	nudge_index = stod(secParam["nudge_index"]);
 	repulse_index = stod(secParam["repulse_index"]);
+	ReactionTime = stod(secParam["ReactionTime"]);
+	Deccelerate = stod(secParam["Deceleration"]);
+	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
+	if (vsafe[0].compare("") != 0) {
+		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
+	}
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
@@ -58,6 +64,11 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	// Consider the boundary control
 	fy = controlRoadBoundary(ego, fy);
 
+	// Limit the x-axis acceleration according to safe velocity
+	if (VSafeVehModels.size() > 0){
+		double ax_safe = calculateSafeAcc(ego, front_neighbors);
+		fx = std::min(fx, ax_safe);
+	}
 
 	return std::make_tuple(fx, fy);
 }
@@ -71,6 +82,43 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, st
 		totalFy += fy;
 	}
 	return std::make_tuple(totalFX, totalFy);
+}
+
+double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors) {
+	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0;
+	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0;
+
+	Car* leader = nullptr;
+	for (Car* car : front_neighbors) {
+		double delta_x = car->getX() - ego->getX();
+		if (delta_x < FrontDistnce && VSafeVehModels.find(car->getModelName()) != VSafeVehModels.end()) {
+			double lower_car_y = car->getY() - car->getWidth() / 2.0;
+			double upper_car_y = car->getY() + car->getWidth() / 2.0;
+			if ((lower_ego_y < upper_car_y && upper_car_y < upper_ego_y) || (lower_ego_y < lower_car_y && lower_car_y < upper_ego_y)) {
+				leader = car;
+				break;
+			}
+		}
+	}
+	
+	double desired_speed = get_desired_speed(ego->getNumId());
+	double time_step = get_time_step_length();
+	double ax{1000};
+	if (leader != nullptr) {
+		double a = ReactionTime * Deccelerate;
+		double gap = leader->getX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+		double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
+
+		double diff_vel_x = vsafe - ego->getSpeedX();
+		if (diff_vel_x < 0) {
+			ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
+		}
+		else {
+			ax = diff_vel_x / time_step;
+		}
+	}
+
+	return ax;
 }
 
 std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour) {
