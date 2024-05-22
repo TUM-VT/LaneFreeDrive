@@ -35,15 +35,20 @@ map<string, map<string, string>> LFTStrategy::extractModelSpecificParams(iniMap 
 	map<string, map<string, string>> params;
 	for (auto const& [key, val] : config) {
 		if (key.find(prefix) == 0) {
-			std::regex reg(",");
 			string mstring = key.substr(prefix.length());
-			std::vector<string> models{ std::sregex_token_iterator(mstring.begin(), mstring.end(), reg, -1), {} };
+			std::vector<string> models = splitString(mstring, ",");
 			for (string model : models) {
 				params[model] = val;
 			}
 		}
 	}
 	return params;
+}
+
+std::vector<string> LFTStrategy::splitString(const string& s, string delimiter) {
+	std::regex reg(delimiter);
+	std::vector<string> split{ std::sregex_token_iterator(s.begin(), s.end(), reg, -1), {} };
+	return split;
 }
 
 bool LFTStrategy::circular = false;
