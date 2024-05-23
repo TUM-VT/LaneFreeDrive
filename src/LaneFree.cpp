@@ -111,7 +111,7 @@ void insert_vehicles() {
 		std::mt19937 rng(std::stoi(it->second["seed"]));
 		std::uniform_real_distribution<double> uni_x(std::stoi(it->second["lower_x"]), std::stoi(it->second["upper_x"]));
 		std::uniform_real_distribution<double> uni_y(std::stoi(it->second["lower_y"]), std::stoi(it->second["upper_y"]));
-		double min_distance = std::stod(it->second["seed"]);
+		double min_distance = std::stod(it->second["min_distance"]);
 
 		std::string str = it->second["vehicle_types"];
 		std::vector<std::string> vehicle_types{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
