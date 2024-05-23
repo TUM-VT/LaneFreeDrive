@@ -89,7 +89,7 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 			}
 			catch (const std::out_of_range& e) {
 				if (vehTypesBoundaryError.find(typeName) == vehTypesBoundaryError.end()) {
-					std::cerr << "\nNo Boundary type given for vtype " + typeName + ". Check Vehicle Boundaries in config file.";
+					printf("\nNo Boundary type given for vtype %s. Check Vehicle Boundaries in config file.", typeName.c_str());
 					vehTypesBoundaryError.insert(typeName);
 				}
 				
