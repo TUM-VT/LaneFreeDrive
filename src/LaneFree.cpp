@@ -156,7 +156,15 @@ void insert_vehicles() {
 }
 
 void simulation_initialize() {
-	config = readConfigFileFallback("config.ini", "default_config\\default_config.ini");
+	auto config_path = getenv("CONFIG_FILE");
+	auto default_path = getenv("DEFAULT_CONFIG_FILE");
+	if (config_path == NULL) {
+		config_path = "config.ini";
+	}
+	if (default_path == NULL) {
+		default_path = "default_config\\default_config.ini";
+	}
+	config = readConfigFileFallback(config_path, default_path);
 	insert_vehicles();
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
