@@ -277,8 +277,9 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 
 		// Check if the lane change is possible
 		if (ay != 0) {
+			double new_x = ego->getX() + next_vel_x * time_step;
 			bool boundary_cross = isCrossingRoadBoundary(ego, ego_strip_info.mainInx + delta_inx, ego_strip);
-			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y, front_cars, back_cars);
+			bool sufficient_gap = isSufficientGap(ego, ego->getX(), new_y, front_cars, back_cars);
 			if (boundary_cross || !sufficient_gap) {
 				ay = -ego->getSpeedY() / time_step;
 			}
