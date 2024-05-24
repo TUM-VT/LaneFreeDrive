@@ -96,45 +96,33 @@ double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader, double gap)
 	return vsafe;
 }
 
-vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> front_cars) {
+std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
 	EdgeStrips* strip = edgeStrips[ego->getCurrentEdge()];
 	vector<int> indices(strip->getTotalNoStrips());
 	std::iota(indices.begin(), indices.end(), 0);
 	int numocc = strip->getVehicleStripInfo(ego).numOccupied;
-	vector<Car*> leaders(indices.size(), nullptr);
 	std::set<int> incl_indices;
 
-	for (Car* car: front_cars) {
+	std::map<int, tuple<double, Car*>> safe_velocity_map;
+	for (int i : indices) {
+		safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
+	}
+
+	for (Car* car : front_cars) {
 		StripInfo* info = &strip->getVehicleStripInfo(carsMap[car->getNumId()]);
 		int car_lw = info->mainInx;
 		int car_up = car_lw + info->numOccupied - 1;
 
 		int overlap_lower = std::max(car_lw - numocc + 1, 0);
 		int overlap_upper = std::min(car_up - 1, (int)indices.size() - 1);
+		double gap = car->getCircularX() - car->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+		double safe_vels = calculateSafeVelocity(ego, car, gap);
 
 		for (int k = overlap_lower; k <= overlap_upper; k++) {
 			if (incl_indices.find(k) == incl_indices.end()) {
-				leaders[k] = car;
 				incl_indices.insert(k);
+				safe_velocity_map[k] = std::make_tuple(safe_vels, car);
 			}
-		}
-	}
-	return leaders;
-}
-
-
-std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
-	vector<Car*> leaders = calculateLeadersOverlap(ego, front_cars);
-	std::map<int, tuple<double, Car*>> safe_velocity_map;
-	for (int i = 0; i < leaders.size(); i++) {
-		Car* lead = leaders[i];
-		if (lead != nullptr) {
-			double gap = lead->getCircularX() - lead->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
-			double safe_vels = calculateSafeVelocity(ego, lead, gap);
-			safe_velocity_map[i] = std::make_tuple(safe_vels, lead);
-		}
-		else {
-			safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
 		}
 	}
 	return safe_velocity_map;
