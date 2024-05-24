@@ -110,7 +110,7 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 		int car_up = car_lw + info->numOccupied - 1;
 
 		int overlap_lower = std::max(car_lw - numocc + 1, 0);
-		int overlap_upper = std::min(car_up + numocc - 1, (int)indices.size() - 1);
+		int overlap_upper = std::min(car_up - 1, (int)indices.size() - 1);
 
 		for (int k = overlap_lower; k <= overlap_upper; k++) {
 			if (incl_indices.find(k) == incl_indices.end()) {
