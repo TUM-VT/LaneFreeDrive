@@ -201,6 +201,10 @@ bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y, vector<Car*>
 	bool sufficient_gap = true;
 	for (vector<Car*> neighbours : { front_cars, back_cars }) {
 		for (Car* car : neighbours) {
+			if (std::abs(ego->getX() - car->getX()) > 3 * ego->getLength()) {
+				break;
+			}
+
 			double car_lw_x = car->getCircularX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
 			double car_up_x = car->getCircularX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
 
