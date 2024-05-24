@@ -282,7 +282,7 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 			bool boundary_cross = isCrossingRoadBoundary(ego, ego_strip_info.mainInx + delta_inx, ego_strip);
 			bool sufficient_gap = isSufficientGap(ego, next_vel_x * time_step, new_y, front_cars, back_cars);
 			if (boundary_cross || !sufficient_gap) {
-				ay = -ego->getSpeedY();
+				ay = -ego->getSpeedY() / time_step;
 			}
 		}
 	}
