@@ -124,18 +124,14 @@ vector<Car*> StripBasedHuman::calculateLeadersOverlap(Car* ego, vector<Car*> fro
 
 
 std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
-	double ego_x = ego->getX();
-	map<Car*, double> safe_vels;
-	for (Car* car : front_cars) {
-		double gap = car->getCircularX() - car->getLength() / 2.0 - (ego_x + ego->getLength() / 2.0);
-		safe_vels[car] = calculateSafeVelocity(ego, car, gap);
-	}
 	vector<Car*> leaders = calculateLeadersOverlap(ego, front_cars);
 	std::map<int, tuple<double, Car*>> safe_velocity_map;
 	for (int i = 0; i < leaders.size(); i++) {
 		Car* lead = leaders[i];
 		if (lead != nullptr) {
-			safe_velocity_map[i] = std::make_tuple(safe_vels[lead], lead);
+			double gap = lead->getCircularX() - lead->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+			double safe_vels = calculateSafeVelocity(ego, lead, gap);
+			safe_velocity_map[i] = std::make_tuple(safe_vels, lead);
 		}
 		else {
 			safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
