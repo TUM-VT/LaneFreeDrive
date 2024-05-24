@@ -268,10 +268,8 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	double ay = - ego->getSpeedY() / time_step;
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
-		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx);
-		double current_y = ego->getY();
-		double width = ego->getWidth();
-		double diff_y = new_y - (ego->getY() - ego->getWidth() / 2);
+		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx) + ego->getWidth() / 2;
+		double diff_y = new_y - ego->getY();
 
 		double req_speed_y = diff_y / time_step;
 		double speed_diff = req_speed_y - ego->getSpeedY();
