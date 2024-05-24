@@ -111,7 +111,8 @@ void insert_vehicles() {
 		std::mt19937 rng(std::stoi(it->second["seed"]));
 		std::uniform_real_distribution<double> uni_x(std::stoi(it->second["lower_x"]), std::stoi(it->second["upper_x"]));
 		std::uniform_real_distribution<double> uni_y(std::stoi(it->second["lower_y"]), std::stoi(it->second["upper_y"]));
-		double min_distance = std::stod(it->second["min_distance"]);
+		double min_distance_x = std::stod(it->second["min_distance_x"]);
+		double min_distance_y = std::stod(it->second["min_distance_y"]);
 
 		std::string str = it->second["vehicle_types"];
 		std::vector<std::string> vehicle_types{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
@@ -136,8 +137,9 @@ void insert_vehicles() {
 					y_val = uni_y(rng);
 					bool overlaps = false;
 					for (const auto& pos : vehicle_positions) {
-						double distance = std::hypot(x_val - pos.first, y_val - pos.second);
-						if (distance < min_distance) {
+						double dist_x = std::abs(x_val - pos.first);
+						double dist_y = std::abs(y_val - pos.second);
+						if (dist_x < min_distance_x && dist_y < min_distance_y) {
 							overlaps = true;
 							break;
 						}
