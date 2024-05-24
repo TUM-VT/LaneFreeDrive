@@ -208,11 +208,13 @@ bool StripBasedHuman::isSufficientGap(Car* ego, double x, double y, vector<Car*>
 			double car_lw_x = car->getCircularX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
 			double car_up_x = car->getCircularX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
 
-			if ((ego_lw_x <= car_lw_x && car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x && car_up_x <= ego_up_x)) {
-				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - car->getWidth() / 2.0;
-				double car_up_y = car->getY() + delta_t * car->getSpeedY() + car->getWidth() / 2.0;
-				if ((ego_lw_y <= car_lw_y && car_lw_y <= ego_up_y) || (ego_up_y <= car_up_y && car_up_y <= ego_up_y)) {
+			if ((ego_lw_x <= car_lw_x && car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x && car_up_x <= ego_up_x) 
+				|| (car_lw_x <= ego_lw_x && ego_lw_x <= car_up_x) || (car_lw_x <= ego_up_x && ego_up_x <= car_up_x)) {
+				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - 1.2 * car->getWidth() / 2.0;
+				double car_up_y = car->getY() + delta_t * car->getSpeedY() + 1.2 * car->getWidth() / 2.0;
+				if ((ego_lw_y <= car_lw_y && car_lw_y <= ego_up_y) || (ego_lw_y <= car_up_y && car_up_y <= ego_up_y)) {
 					sufficient_gap = false;
+					break;
 				}
 			}
 		}
