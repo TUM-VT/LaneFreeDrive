@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <regex>
 #include <random>
+#include <fstream>
 #include "Controller.h"
 #include "PotentialLines.h"
 #include "StripBasedHuman.h"
@@ -30,6 +31,7 @@ map<NumericalID, Car*> carsMap;
 map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
+std::ofstream collision_file;
 
 iniMap readConfigFile(char* file_name) {
 	// Get path of the dll plugin for the lanefree traffic
@@ -172,6 +174,14 @@ void simulation_initialize() {
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 
+	// File to store collisions
+	auto it = config.find("General Parameters");
+	string collisions_path = it->second["collisions_file"];
+	if (collisions_path.compare("") != 0) {
+		collision_file.open(collisions_path);
+		collision_file << "Time,Vehicle1,Vehicle2\n";
+	}
+
 	//initialize srand with the same seed as sumo
 	srand(get_seed());
 	printf("\nInitializiation over!!!\n");
@@ -212,7 +222,9 @@ void simulation_step() {
 }
 
 void simulation_finalize() {
-
+	if (collision_file.is_open()) {
+		collision_file.close();
+	}
 }
 
 double box_muller(double mu, double sigma) {
@@ -263,11 +275,12 @@ void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
-
-	char vname1[40];
-	sprintf(vname1,"%s",get_vehicle_name(veh_id1));
-	char* vname2 = get_vehicle_name(veh_id2);	
-	double t = get_current_time_step();
+	Car* car1 = carsMap[veh_id1];
+	Car* car2 = carsMap[veh_id2];
+	double time = get_time_step_length() * get_current_time_step();
+	if (collision_file.is_open()) {
+		collision_file << time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+	}
 }
 
 void event_vehicle_out_of_bounds(NumericalID veh_id) {
