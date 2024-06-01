@@ -5,6 +5,7 @@
 #include <time.h>
 #include <SimpleIni.h>
 #include <map>
+#include <set>
 #include <filesystem>
 #include <unordered_set>
 #include <regex>
@@ -32,6 +33,8 @@ map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
 std::ofstream collision_file;
+map<std::tuple<Car*, Car*>, double> collisionStartTimes;
+std::set<std::tuple<Car*, Car*>> collisionPairs;
 
 iniMap readConfigFile(char* file_name) {
 	// Get path of the dll plugin for the lanefree traffic
@@ -179,7 +182,7 @@ void simulation_initialize() {
 	string collisions_path = it->second["collisions_file"];
 	if (collisions_path.compare("") != 0) {
 		collision_file.open(collisions_path);
-		collision_file << "Time,Vehicle1,Vehicle2\n";
+		collision_file << "StartTime, EndTime,Vehicle1,Vehicle2\n";
 	}
 
 	//initialize srand with the same seed as sumo
@@ -217,8 +220,24 @@ void simulation_step() {
 		for (int j = 0; j < n_edge_ids; j++) {
 			carsMap[ids_in_edge[j]]->applyAcceleration();
 		}
-
 	}
+
+	// Record the collisions
+	double current_time = get_time_step_length() * get_current_time_step();
+	std::set<std::tuple<Car*, Car*>> delete_pairs;
+	for (const auto& entry : collisionStartTimes) {
+		auto pair = entry.first;
+		if (collisionPairs.count(pair) == 0) {
+			double start_time = entry.second;
+			auto [car1, car2] = pair;
+			collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+			delete_pairs.insert(pair);
+		}
+	}
+	for (const auto& pair : delete_pairs) {
+		collisionStartTimes.erase(pair);
+	}
+	collisionPairs.clear();
 }
 
 void simulation_finalize() {
@@ -277,9 +296,12 @@ void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
 	Car* car1 = carsMap[veh_id1];
 	Car* car2 = carsMap[veh_id2];
+	std::tuple<Car*, Car*> combination = std::make_tuple(car1, car2);
 	double time = get_time_step_length() * get_current_time_step();
-	if (collision_file.is_open()) {
-		collision_file << time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+	collisionPairs.insert(combination);
+	
+	if (collisionStartTimes.count(combination) == 0) {
+		collisionStartTimes[combination] = time;
 	}
 }
 
