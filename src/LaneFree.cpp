@@ -294,14 +294,16 @@ void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
-	Car* car1 = carsMap[veh_id1];
-	Car* car2 = carsMap[veh_id2];
-	std::tuple<Car*, Car*> combination = std::make_tuple(car1, car2);
-	double time = get_time_step_length() * get_current_time_step();
-	collisionPairs.insert(combination);
-	
-	if (collisionStartTimes.count(combination) == 0) {
-		collisionStartTimes[combination] = time;
+	if (carsMap.size() > 0) {
+		Car* car1 = carsMap[veh_id1];
+		Car* car2 = carsMap[veh_id2];
+		std::tuple<Car*, Car*> combination = std::make_tuple(car1, car2);
+		double time = get_time_step_length() * get_current_time_step();
+		collisionPairs.insert(combination);
+
+		if (collisionStartTimes.count(combination) == 0) {
+			collisionStartTimes[combination] = time;
+		}
 	}
 }
 
