@@ -11,6 +11,7 @@
 #pragma once
 #include "Controller.h"
 #include <vector>
+#include <random>
 
 typedef struct
 {
@@ -55,6 +56,9 @@ private:
 	std::map<Car*, StripInfo> occupancyMap;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<NumericalID, EdgeStrips*> edgeStrips;
+	std::map<Car*, double> ReactionTimesMap;
+	std::mt19937 rng;
+	std::normal_distribution<double> reaction_distribution;
 
 	std::map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 

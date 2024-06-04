@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <numeric>
 #include <set>
+#include <random>
 
 using std::map;
 using std::string;
@@ -72,7 +73,16 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	auto it = config.find("Strip Based Human Parameters");
 	map<string, string> secParam = it->second;
 
-	ReactionTime = stod(secParam["ReactionTime"]);
+	map<Car*, double> ReactionTimeMap;
+	if (secParam["ReactionTime"].compare("RANDOM") == 0) {
+		ReactionTime = std::nan("");
+		rng = std::mt19937(std::stoi(config["RANDOM Init"]["seed"]));
+		std::vector<string> reaction_range = splitString(secParam["ReactionTimeRange"], ",");
+		reaction_distribution = std::normal_distribution<double>(std::stod(reaction_range[0]), std::stod(reaction_range[1]));
+	}
+	else {
+		ReactionTime = stod(secParam["ReactionTime"]);
+	}
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
@@ -91,7 +101,17 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 }
 
 double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader, double gap) {
-	double a = ReactionTime * Deccelerate;
+	double reaction_time = ReactionTime;
+	if (std::isnan(ReactionTime)) {
+		if (ReactionTimesMap.find(ego) == ReactionTimesMap.end()) {
+			reaction_time = reaction_distribution(rng);
+			ReactionTimesMap[ego] = reaction_time;
+		}
+		else {
+			reaction_time = ReactionTimesMap[ego];
+		}
+	}
+	double a = reaction_time * Deccelerate;
 	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
 	return vsafe;
 }
