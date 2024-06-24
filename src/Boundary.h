@@ -18,6 +18,9 @@ public:
 	// Updates the boundary according current location of the ego vehicle
 	virtual void updateBoundary() = 0;
 
+	virtual std::tuple<double, double> calculateDistanceToBoundary(Car* car, double x, double y)=0;
+	virtual std::tuple<double, double> calculateDistanceToLeaveBoundary(Car* car, double x, double y)=0;
+
 protected:
 	Car* ego;
 };
@@ -27,8 +30,8 @@ public:
 	RectangularHardBoundary(iniMap config, Car* ego);
 	std::tuple<double, double> calculateSafeAcc(Car* car) override;
 	std::tuple<double, double> calculateAccToLeave(Car* car) override;
-	std::tuple<double, double> calculateDistanceToBoundary(Car* car, double x, double y);
-	std::tuple<double, double> calculateDistanceToLeaveBoundary(Car* car, double x, double y);
+	std::tuple<double, double> calculateDistanceToBoundary(Car* car, double x, double y) override;
+	std::tuple<double, double> calculateDistanceToLeaveBoundary(Car* car, double x, double y) override;
 	void updateBoundary() override;
 
 private:

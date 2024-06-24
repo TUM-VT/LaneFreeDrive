@@ -54,23 +54,25 @@ std::tuple<double, double> RectangularHardBoundary::calculateDistanceToLeaveBoun
 }
 
 std::tuple<double, double> RectangularHardBoundary::calculateDistanceToBoundary(Car* car, double x, double y) {
-	double half_length = car->getLength() / 2.0;
-	double half_width = car->getWidth() / 2.0;
+	double car_upper_x = x + car->getLength() / 2.0;
+	double car_lower_x = x - car->getLength() / 2.0;
+	double car_upper_y = y + car->getWidth() / 2.0;
+	double car_lower_y = y - car->getWidth() / 2.0;
 	double del_x = std::nan("");
 	double del_y = std::nan("");
 
-	if (x + half_length < lower_x) {
-		del_x = lower_x - (x + half_length);
+	if (car_upper_x < lower_x) {
+		del_x = lower_x - car_upper_x;
 	}
-	else if (x - half_length > upper_x){
-		del_x = upper_x - (x - half_length) ;
+	else if (car_lower_x > upper_x){
+		del_x = upper_x - car_lower_x;
 	}
 
-	if (y + half_width < lower_y) {
-		del_y = lower_y - (y + half_width);
+	if (car_upper_y < lower_y) {
+		del_y = lower_y - car_upper_y;
 	}
-	else if (y - half_width > upper_y) {
-		del_y = upper_y - (y - half_width);
+	else if (car_lower_y > upper_y) {
+		del_y = upper_y - car_lower_y;
 	}
 	return std::make_tuple(del_x, del_y);
 }
