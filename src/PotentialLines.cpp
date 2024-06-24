@@ -165,8 +165,14 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 		double fx_sign = (ego->getX() < neighbour_x) ? -1 : 1;
 		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
 
-		fx = fx_sign * fabs(fx);
-		fy = fy_sign * fabs(fy);
+		double force_index = (ego->getX() < neighbour_x) ? repulse_index : nudge_index;
+		if (modelParams.find(neighbour->getModelName()) != modelParams.end()) {
+			auto param = modelParams[neighbour->getModelName()];
+			force_index = (ego->getX() < neighbour_x) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
+		}
+
+		fx = force_index * fx_sign * fabs(fx);
+		fy = force_index * fy_sign * fabs(fy);
 	}
 	return std::make_tuple(fx, fy);
 }
