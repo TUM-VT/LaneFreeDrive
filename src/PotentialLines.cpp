@@ -62,8 +62,8 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
-	fx = ax_desired + nudge_index * fx_nudge + repulse_index * fx_repluse;
-	fy = ay_desired + nudge_index * fy_nudge + repulse_index * fy_repluse + fy_pl;
+	fx = ax_desired + fx_nudge + fx_repluse;
+	fy = ay_desired + fy_nudge + fy_repluse + fy_pl;
 	// Consider the boundary control
 	fy = controlRoadBoundary(ego, fy);
 
@@ -126,10 +126,17 @@ double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighb
 
 std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour) {
 	double lon_axis{ 0 }, lat_axis{ 0 };
-	lon_axis = Li * (ego->getLength() + neighbour->getLength())
+	double li {Li}, w{Wi};
+	if (modelParams.find(neighbour->getModelName()) != modelParams.end()){
+		auto param = modelParams[neighbour->getModelName()];
+		li = std::stod(param["Li"]);
+		w = std::stod(param["Wi"]);
+	}
+
+	lon_axis = li * (ego->getLength() + neighbour->getLength())
 		+ wx1 * (ego->getSpeedX() + neighbour->getSpeedX())
 		+ wx2 * fabs(ego->getSpeedX() - neighbour->getSpeedX());
-	double wi = Wi * ego->getWidth() + Wi * neighbour->getWidth();
+	double wi = w * ego->getWidth() + w * neighbour->getWidth();
 	// double item0 = (ego->getY() - neighbour->getY()) / (neighbour->getSpeedY() - ego->getSpeedY() + 0.0001);
 	// lat_axis = wi + wy * (tanh(item0) + sqrt(pow(tanh(item0), 2) + 0.0001));
 
