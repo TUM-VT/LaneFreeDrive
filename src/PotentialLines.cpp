@@ -41,6 +41,7 @@ PotentialLines::PotentialLines(iniMap config) {
 	repulse_index = stod(secParam["repulse_index"]);
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
+	Accelerate = stod(secParam["Acceleration"]);
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
 	if (vsafe[0].compare("") != 0) {
 		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
@@ -179,8 +180,9 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 
 
 std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
-	double vd = get_desired_speed(car->getNumId());
-	double target_speed = 1.1 * car->getSpeedX();
+	double vd = car->getDesiredSpeed();
+	double step = get_time_step_length();
+	double target_speed = car->getSpeedX() + Accelerate * step;
 	double control_speed = MIN(target_speed, vd);
 	double ax_desired = Kp1 * (control_speed - car->getSpeedX());
 	double ay_desired = -Kp2 * car->getSpeedY();

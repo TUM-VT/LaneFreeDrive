@@ -22,6 +22,7 @@ private:
 	int n, p, q;
 	double ReactionTime;
 	double Deccelerate;
+	double Accelerate;
 	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
 
