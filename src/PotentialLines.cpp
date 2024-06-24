@@ -45,6 +45,9 @@ PotentialLines::PotentialLines(iniMap config) {
 	if (vsafe[0].compare("") != 0) {
 		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
 	}
+
+	// find the key in the variable that starts with "PL:"
+	modelParams = extractModelSpecificParams(config, "PL:");
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {

@@ -23,6 +23,7 @@ private:
 	double ReactionTime;
 	double Deccelerate;
 	std::set<std::string> VSafeVehModels;
+	std::map<std::string, std::map<std::string, std::string>> modelParams;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
