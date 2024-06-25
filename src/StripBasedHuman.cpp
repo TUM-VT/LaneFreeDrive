@@ -132,8 +132,8 @@ std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car*
 		int car_lw = info->mainInx;
 		int car_up = car_lw + info->numOccupied - 1;
 
-		int overlap_lower = std::max(car_lw - numocc + 1, 0);
-		int overlap_upper = std::min(car_up - 1, (int)indices.size() - 1);
+		int overlap_lower = std::max(car_lw - numocc - 1, 0);
+		int overlap_upper = std::min(car_up + 1, (int)indices.size() - 1);
 		double gap = car->getCircularX() - car->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
 		double safe_vels = calculateSafeVelocity(ego, car, gap);
 		if (gap < 0) {
