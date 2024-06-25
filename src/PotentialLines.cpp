@@ -17,8 +17,7 @@ using std::string;
 
 PotentialLines::PotentialLines(iniMap config) {
 	printf("Setting parameters for Potential Lines strategy");
-	auto it = config.find("Potential Lines Parameters");
-	map<string, string> secParam = it->second;
+	map<string, string> secParam = config["Potential Lines Parameters"];
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
@@ -34,8 +33,6 @@ PotentialLines::PotentialLines(iniMap config) {
 	Wi = stod(secParam["Wi"]);
 	Kp1 = stod(secParam["kp1"]);
 	Kp2 = stod(secParam["kp2"]);
-	MINDesiredSpeed = stod(secParam["min_desired_speed"]);
-	MAXDesiredSpeed = stod(secParam["max_desired_speed"]);
 	verordnungsindex = stod(secParam["pl_force_index"]);
 	nudge_index = stod(secParam["nudge_index"]);
 	repulse_index = stod(secParam["repulse_index"]);
@@ -49,6 +46,9 @@ PotentialLines::PotentialLines(iniMap config) {
 
 	// find the key in the variable that starts with "PL:"
 	modelParams = extractModelSpecificParams(config, "PL:");
+
+	MINDesiredSpeed = stod(config["General Parameters"]["min_desired_speed"]);
+	MAXDesiredSpeed = stod(config["General Parameters"]["max_desired_speed"]);
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {

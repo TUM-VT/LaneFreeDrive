@@ -70,8 +70,7 @@ void StripBasedHuman::update() {
 
 StripBasedHuman::StripBasedHuman(iniMap config) {
 	printf("\nSetting parameters for Strip Based Human Driver strategy");
-	auto it = config.find("Strip Based Human Parameters");
-	map<string, string> secParam = it->second;
+	map<string, string> secParam = config["Strip Based Human Parameters"];
 
 	map<Car*, double> ReactionTimeMap;
 	if (secParam["ReactionTime"].compare("RANDOM") == 0) {
