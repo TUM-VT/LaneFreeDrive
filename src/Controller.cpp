@@ -158,7 +158,7 @@ std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
 		if (distance > 0 && ego->getX() > (edge_len - distance - 10)) {
 			for (Car* car: neighborCars) {
 				if (car->getX() <= distance) {
-					car->setCircularX(std::abs(car->getX()) + edge_len);
+					car->setCircularX(car->getX() + edge_len);
 				}
 			}
 		}
