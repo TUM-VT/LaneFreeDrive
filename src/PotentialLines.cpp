@@ -112,6 +112,9 @@ double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighb
 		double a = ReactionTime * Deccelerate;
 		double gap = leader->getX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
 		double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
+		if (gap < 0) {
+			vsafe = 0;
+		}
 
 		double diff_vel_x = vsafe - ego->getSpeedX();
 		if (diff_vel_x < 0) {
