@@ -35,6 +35,7 @@ iniMap config;
 std::ofstream collision_file;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
+std::mt19937 speed_rand;
 
 iniMap readConfigFile(char* file_name) {
 	// Get path of the dll plugin for the lanefree traffic
@@ -185,8 +186,14 @@ void simulation_initialize() {
 		collision_file << "StartTime, EndTime,Vehicle1,Vehicle2\n";
 	}
 
-	//initialize srand with the same seed as sumo
-	srand(get_seed());
+	//initialize the same seed
+	speed_rand = std::default_random_engine(stoi(gen_config["seed"]));
+	string speed_dist = gen_config["speed_dist"];
+	// Check if the speed dist is NORMAL, UNIFORM or Empty string and print an error message if it is not
+	if (speed_dist.compare("NORMAL") != 0 && speed_dist.compare("UNIFORM") != 0 && speed_dist.compare("") != 0) {
+		printf("Speed distribution %s not recognized. Setting it to empty field.\n", speed_dist.c_str());
+		config["General Parameters"]["speed_dist"] = "";
+	}
 	printf("\nInitializiation over!!!\n");
 }
 
@@ -246,42 +253,45 @@ void simulation_finalize() {
 	}
 }
 
-double box_muller(double mu, double sigma) {
-	double u1 = rand() / (double)RAND_MAX;
-	double u2 = rand() / (double)RAND_MAX;
+// Function to generate a single random sample
+double generate_combined_normal_sample() {
+	auto norm_config = config["Desired Speed: Normal"];
+	std::vector<std::string> mu_vector = LFTStrategy::splitString(norm_config["mu"], ",");
+	std::vector<std::string> sigma_vector = LFTStrategy::splitString(norm_config["sigma"], ",");
 
-	double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * 3.141 * u2);
-	return z0 * sigma + mu;
-}
+	std::uniform_real_distribution<double> distribution(0.0, 1.0);
+	double random_number = distribution(speed_rand);
 
-double generate_desired_speed() {
-
-	double random_num;
-	double speed;
-	auto it = config.find("General Parameters");
-	double mu1 = std::stod(it->second["mu1"]);
-	double mu2 = std::stod(it->second["mu2"]);
-	double sigma1 = std::stod(it->second["sigma1"]);
-	double sigma2 = std::stod(it->second["sigma2"]);
-
-	do {
-		if (rand() % 2 == 0) {
-			random_num = box_muller(mu1, sigma1);
+	// Determine which normal distribution to sample from based on the coefficients
+	double coeff = 1.0 / mu_vector.size();
+	double cumulative_probability = 0.0;
+	for (int i = 0; i < mu_vector.size(); ++i) {
+		cumulative_probability += coeff;
+		if (random_number <= cumulative_probability) {
+			std::normal_distribution<double> norm_dist(std::stod(mu_vector[i]), std::stod(sigma_vector[i]));
+			return norm_dist(speed_rand);
 		}
-		else {
-			random_num = box_muller(mu2, sigma2);
-		}
+	}
 
-		speed = random_num;
-	} while (speed < 25 || speed > 35);
-
-	return speed;
+	// This point should never be reached
+	return 0.0;
 }
 
 void event_vehicle_enter(NumericalID veh_id) {
-	char* v_type = get_veh_type_name(veh_id);
-	int desired_speed = generate_desired_speed();
-	set_desired_speed(veh_id, desired_speed);
+	auto gen_config = config["General Parameters"];
+	string dist_type = gen_config["speed_dist"];
+	double min_speed = std::stod(gen_config["min_desired_speed"]);
+	double max_speed = std::stod(gen_config["max_desired_speed"]);
+	if (dist_type.compare("UNIFORM") == 0) {
+		std::uniform_real_distribution<double> uni(min_speed, max_speed);
+		double desired_speed = uni(speed_rand);
+		set_desired_speed(veh_id, desired_speed);
+	}
+	else if (dist_type.compare("NORMAL") == 0) {
+		auto norm_config = config["Desired Speed: Normal"];
+		double desired_speed = generate_combined_normal_sample();
+		set_desired_speed(veh_id, desired_speed);
+	}
 	set_circular_movement(veh_id, LFTStrategy::isCircular());
 
 }

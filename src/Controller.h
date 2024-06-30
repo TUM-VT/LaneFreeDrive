@@ -29,7 +29,7 @@ public:
 	// Extracts the parameters of section name with the prefix from the config file
 	std::map<std::string, std::map<std::string, std::string>> extractModelSpecificParams(iniMap config, std::string prefix);
 	// Splits a string s by the delimiter
-	std::vector<std::string> splitString(const std::string& s, std::string delimiter);
+	static std::vector<std::string> splitString(const std::string& s, std::string delimiter);
 
 protected:
 	std::map<NumericalID, Car*> carsMap;
