@@ -16,7 +16,7 @@ using std::map;
 using std::string;
 
 PotentialLines::PotentialLines(iniMap config) {
-	printf("Setting parameters for Potential Lines strategy");
+	printf("Setting parameters for Potential Lines strategy\n");
 	map<string, string> secParam = config["Potential Lines Parameters"];
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);

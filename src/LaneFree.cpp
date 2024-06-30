@@ -106,23 +106,23 @@ iniMap readConfigFileFallback(char* config_file, char* default_file) {
 }
 
 void insert_vehicles() {
-	auto it = config.find("General Parameters");
-	std::string vehicle_init = it->second["vehicle_init"];
+	auto gen_config = config["General Parameters"];
+	std::string vehicle_init = gen_config["vehicle_init"];
 	std::regex reg(",");
 	if (vehicle_init.compare("RANDOM") == 0) {
-		auto it = config.find("RANDOM Init");
-		std::string route = it->second["routes"];
+		auto rand_config = config["RANDOM Init"];
+		std::string route = gen_config["routes"];
 
-		std::mt19937 rng(std::stoi(it->second["seed"]));
-		std::uniform_real_distribution<double> uni_x(std::stoi(it->second["lower_x"]), std::stoi(it->second["upper_x"]));
-		std::uniform_real_distribution<double> uni_y(std::stoi(it->second["lower_y"]), std::stoi(it->second["upper_y"]));
-		double min_distance_x = std::stod(it->second["min_distance_x"]);
-		double min_distance_y = std::stod(it->second["min_distance_y"]);
+		std::mt19937 rng(std::stoi(gen_config["seed"]));
+		std::uniform_real_distribution<double> uni_x(std::stoi(rand_config["lower_x"]), std::stoi(rand_config["upper_x"]));
+		std::uniform_real_distribution<double> uni_y(std::stoi(rand_config["lower_y"]), std::stoi(rand_config["upper_y"]));
+		double min_distance_x = std::stod(rand_config["min_distance_x"]);
+		double min_distance_y = std::stod(rand_config["min_distance_y"]);
 
-		std::string str = it->second["vehicle_types"];
+		std::string str = rand_config["vehicle_types"];
 		std::vector<std::string> vehicle_types{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
 
-		str = it->second["vehicle_counts"];
+		str = rand_config["vehicle_counts"];
 		std::vector<std::string> vehicle_counts{ std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
 
 		// Store vehicle positions to check for overlaps
@@ -178,8 +178,8 @@ void simulation_initialize() {
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 
 	// File to store collisions
-	auto it = config.find("General Parameters");
-	string collisions_path = it->second["collisions_file"];
+	auto gen_config = config["General Parameters"];
+	string collisions_path = gen_config["collisions_file"];
 	if (collisions_path.compare("") != 0) {
 		collision_file.open(collisions_path);
 		collision_file << "StartTime, EndTime,Vehicle1,Vehicle2\n";

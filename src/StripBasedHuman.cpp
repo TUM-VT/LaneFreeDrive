@@ -69,13 +69,13 @@ void StripBasedHuman::update() {
 }
 
 StripBasedHuman::StripBasedHuman(iniMap config) {
-	printf("\nSetting parameters for Strip Based Human Driver strategy");
+	printf("Setting parameters for Strip Based Human Driver strategy\n");
 	map<string, string> secParam = config["Strip Based Human Parameters"];
 
 	map<Car*, double> ReactionTimeMap;
 	if (secParam["ReactionTime"].compare("RANDOM") == 0) {
 		ReactionTime = std::nan("");
-		rng = std::mt19937(std::stoi(config["RANDOM Init"]["seed"]));
+		rng = std::mt19937(std::stoi(config["General Parameters"]["seed"]));
 		std::vector<string> reaction_range = splitString(secParam["ReactionTimeRange"], ",");
 		reaction_distribution = std::normal_distribution<double>(std::stod(reaction_range[0]), std::stod(reaction_range[1]));
 	}
