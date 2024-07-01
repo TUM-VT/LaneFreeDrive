@@ -23,6 +23,9 @@ private:
 	double ReactionTime;
 	double Deccelerate;
 	double Accelerate;
+	std::string PLForceModel;
+	std::vector<std::string> speed_mu;
+	std::vector<std::string> speed_sigma;
 	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
 
@@ -39,7 +42,9 @@ private:
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
 
-	double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound);
+	double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
+
+	double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
@@ -47,9 +52,7 @@ private:
 	*/
 	double mixed_normal_cdf(double x);
 
-	/* The underlying probability density function used for generating potential lines.
-	* At the moment, it uses a combintation of two guassian distributions, representing fast- and slow-moving vehicles
-	*/
-	double mixed_normal_pdf(double x);
+	// Calculates the pdf of the normal distribution at point x
+	double normal_pdf(double x, double mu, double sigma);
 
 };

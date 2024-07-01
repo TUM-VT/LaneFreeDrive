@@ -7,11 +7,6 @@
 
 #define PI 3.14159265358979323846
 
-#define mu1 28.0
-#define sigma1 1.0
-#define mu2 32.0
-#define sigma2 1.0
-
 using std::map;
 using std::string;
 
@@ -20,6 +15,10 @@ PotentialLines::PotentialLines(iniMap config) {
 	map<string, string> secParam = config["Potential Lines Parameters"];
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
+	PLForceModel = secParam["PLForceModel"];
+	if (PLForceModel.compare("CDF") != 0 && PLForceModel.compare("UNIFORM") != 0) {
+		printf("Invalid PLForceModel for Potential Lines. Simulation will use default CDF model\n");
+	}
 	ForceIndex = stod(secParam["ForceIndex"]);
 	LowerLong = stod(secParam["LowerLong"]);
 	UpperLong = stod(secParam["UpperLong"]);
@@ -49,6 +48,8 @@ PotentialLines::PotentialLines(iniMap config) {
 
 	MINDesiredSpeed = stod(config["General Parameters"]["min_desired_speed"]);
 	MAXDesiredSpeed = stod(config["General Parameters"]["max_desired_speed"]);
+	speed_mu = splitString(config["Desired Speed: Normal"]["mu"], ",");
+	speed_sigma = splitString(config["Desired Speed: Normal"]["sigma"], ",");
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
@@ -59,7 +60,13 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
+	double fy_pl;
+	if (PLForceModel.compare("UNIFORM") == 0) {
+		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
+	}
+	else {
+		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
+	}
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
@@ -153,7 +160,9 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	double neighbour_x = neighbour->getCircularX();
-	double rel_dist_x = fabs(ego->getX() - neighbour_x);
+	// double rel_dist_x = fabs(ego->getX() - neighbour_x);
+	double dneigh = neighbour_x - wx1 * (ego->getSpeedX() - neighbour->getSpeedX()) / 2.0;
+	double rel_dist_x = fabs(ego->getX() - dneigh);
 	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
 
 	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
@@ -192,16 +201,29 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	return std::make_tuple(ax_desired, ay_desired);
 }
 
-double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
+double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound) {
 	double vd = get_desired_speed(ego->getNumId());
-	double ky = 0.05;
 
 	double cdf_value = mixed_normal_cdf(vd);
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
-	double plForce = verordnungsindex * (target_line - ego->getY()) + ky * ego->getSpeedY();
+	double plForce = verordnungsindex * (target_line - ego->getY());
 	return plForce;
+}
+
+
+
+double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound) {
+	double vd = ego->getDesiredSpeed();
+
+	double co = vd - MINDesiredSpeed;
+	double areas = MAXDesiredSpeed - MINDesiredSpeed;
+	double target_line = lower_bound + ((upper_bound - lower_bound) / areas) * co;
+
+	double ordnungskraft = verordnungsindex * (target_line - ego->getY());
+
+	return ordnungskraft;
 }
 
 double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
@@ -228,22 +250,24 @@ double PotentialLines::mixed_normal_cdf(double x) {
 	double interval_width = (upper_speed - lower_speed) / num_intervals;
 
 	double cdf = 0.0;
+	double weight = 1.0 / speed_mu.size();
 	for (int i = 0; i < num_intervals; i++) {
 		double x1 = lower_speed + i * interval_width;
 		double x2 = x1 + interval_width;
-		double y1 = mixed_normal_pdf(x1);
-		double y2 = mixed_normal_pdf(x2);
-
+		double y1{ 0 }, y2{ 0 };
+		for (int j = 0; j < speed_mu.size(); j++) {
+			double mu = stod(speed_mu[j]);
+			double sigma = stod(speed_sigma[j]);
+			y1 += weight * normal_pdf(x1, mu, sigma);
+			y2 += weight * normal_pdf(x2, mu, sigma);
+		}
 		cdf += 0.5 * (y1 + y2) * interval_width;
 	}
 	return cdf;
 }
 
-double PotentialLines::mixed_normal_pdf(double x) {
-	double coef1 = 1.0 / (sigma1 * sqrt(2.0 * PI));
-	double coef2 = 1.0 / (sigma2 * sqrt(2.0 * PI));
-	double exp1 = exp(-0.5 * pow((x - mu1) / sigma1, 2));
-	double exp2 = exp(-0.5 * pow((x - mu2) / sigma2, 2));
-
-	return 0.5 * (coef1 * exp1 + coef2 * exp2);
+double PotentialLines::normal_pdf(double x, double mu, double sigma) {
+	double coef = 1.0 / (sigma * sqrt(2.0 * PI));
+	double expn = exp(-0.5 * pow((x - mu) / sigma, 2));
+	return coef * expn;
 }
