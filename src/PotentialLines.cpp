@@ -15,10 +15,6 @@ PotentialLines::PotentialLines(iniMap config) {
 	map<string, string> secParam = config["Potential Lines Parameters"];
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
-	PLForceModel = secParam["PLForceModel"];
-	if (PLForceModel.compare("CDF") != 0 && PLForceModel.compare("UNIFORM") != 0) {
-		printf("Invalid PLForceModel for Potential Lines. Simulation will use default CDF model\n");
-	}
 	ForceIndex = stod(secParam["ForceIndex"]);
 	LowerLong = stod(secParam["LowerLong"]);
 	UpperLong = stod(secParam["UpperLong"]);
@@ -50,6 +46,15 @@ PotentialLines::PotentialLines(iniMap config) {
 	MAXDesiredSpeed = stod(config["General Parameters"]["max_desired_speed"]);
 	speed_mu = splitString(config["Desired Speed: Normal"]["mu"], ",");
 	speed_sigma = splitString(config["Desired Speed: Normal"]["sigma"], ",");
+
+	PLForceModel = secParam["PLForceModel"];
+	if (PLForceModel.compare("CDF") != 0 && PLForceModel.compare("UNIFORM") != 0) {
+		printf("Invalid PLForceModel for Potential Lines. Simulation will use default CDF model\n");
+		PLForceModel = "CDF";
+	}
+	if (PLForceModel.compare("CDF") == 0) {
+		cdf_map = calculate_cdf_vector(MINDesiredSpeed, MAXDesiredSpeed);
+	}
 }
 
 std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
@@ -203,8 +208,13 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 
 double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound) {
 	double vd = get_desired_speed(ego->getNumId());
-
-	double cdf_value = mixed_normal_cdf(vd);
+	int vd_key = 1000 * std::floor(vd * 1000.0);
+	// Find the vd_key in cdf_map otherwise throw an error
+	if (cdf_map.find(vd_key) == cdf_map.end()) {
+		printf("Desired speed %f not found in cdf_map\n", vd);
+		return 0;
+	}
+	double cdf_value = cdf_map[vd_key];
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
@@ -243,27 +253,29 @@ double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 	return fy;
 }
 
-double PotentialLines::mixed_normal_cdf(double x) {
-	double lower_speed = MINDesiredSpeed;
-	double upper_speed = x;
-	int num_intervals = 1000;
-	double interval_width = (upper_speed - lower_speed) / num_intervals;
-
-	double cdf = 0.0;
+std::map<int, double> PotentialLines::calculate_cdf_vector(double min_speed, double max_speed) {
+	double step_size = 0.001;
+	int last_key = (int)min_speed * 100000;
+	std::map<int, double> cdfs;
+	cdfs[last_key] = 0;
+	double x = min_speed;
 	double weight = 1.0 / speed_mu.size();
-	for (int i = 0; i < num_intervals; i++) {
-		double x1 = lower_speed + i * interval_width;
-		double x2 = x1 + interval_width;
-		double y1{ 0 }, y2{ 0 };
+	double y_last = 0;
+
+	while (x < max_speed) {
+		x += step_size;
+		double y = 0;
 		for (int j = 0; j < speed_mu.size(); j++) {
 			double mu = stod(speed_mu[j]);
 			double sigma = stod(speed_sigma[j]);
-			y1 += weight * normal_pdf(x1, mu, sigma);
-			y2 += weight * normal_pdf(x2, mu, sigma);
+			y += weight * normal_pdf(x, mu, sigma);
 		}
-		cdf += 0.5 * (y1 + y2) * interval_width;
+		int key = 1000 * std::floor(x * 1000.0);
+		cdfs[key] = cdfs[last_key] + 0.5 * (y_last + y) * step_size;
+		y_last = y;
+		last_key = key;
 	}
-	return cdf;
+	return cdfs;
 }
 
 double PotentialLines::normal_pdf(double x, double mu, double sigma) {
