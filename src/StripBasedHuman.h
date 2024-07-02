@@ -12,6 +12,7 @@
 #include "Controller.h"
 #include <vector>
 #include <random>
+#include <fstream>
 
 typedef struct
 {
@@ -44,6 +45,7 @@ public:
 	StripBasedHuman(iniMap config);
 	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 	void update() override;
+	void finalize_simulation() override;
 
 private:
 	double ReactionTime;
@@ -53,6 +55,7 @@ private:
 	double FrontDistance;
 	double LaneChangeThreshold;
 	double Lambda;
+	std::ofstream StripsChangeFile;
 	std::map<Car*, StripInfo> occupancyMap;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<NumericalID, EdgeStrips*> edgeStrips;

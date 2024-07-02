@@ -251,6 +251,9 @@ void simulation_finalize() {
 	if (collision_file.is_open()) {
 		collision_file.close();
 	}
+	for (const auto& strategy : used_strategies) {
+		strategy->finalize_simulation();
+	}
 }
 
 // Function to generate a single random sample

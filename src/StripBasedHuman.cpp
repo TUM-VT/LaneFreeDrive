@@ -88,6 +88,11 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	Accelerate = stod(secParam["Acceleration"]);
 	Lambda = stod(secParam["Lambda"]);
 	LaneChangeThreshold = stod(secParam["LaneChangeThreshold"]);
+	string file_path = secParam["StripsChangeFile"];
+	if (file_path.compare("") != 0) {
+		StripsChangeFile.open(file_path);
+		StripsChangeFile << "Time,Vehicle,From,To,Willingness Right,Willingness Left\n";
+	}
 
 	NumericalID* all_edges = get_all_edges();
 	int num_edges = get_all_edges_size();
@@ -310,8 +315,20 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 			if (boundary_cross || !sufficient_gap) {
 				ay = -ego->getSpeedY() / time_step;
 			}
+			else {
+				if (StripsChangeFile.is_open()) {
+					double time = get_time_step_length() * get_current_time_step();
+					StripsChangeFile << time << "," << ego->getNumId() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
+				}
+			}
 		}
 	}
 
 	return std::make_tuple(ax, ay);
+}
+
+void StripBasedHuman::finalize_simulation() {
+	if (StripsChangeFile.is_open()) {
+		StripsChangeFile.close();
+	}
 }
