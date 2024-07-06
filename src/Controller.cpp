@@ -115,9 +115,10 @@ Car::Car(const Car& car) {
 	boundary = car.boundary;
 }
 
-void Car::applyAcceleration() {
+std::tuple<double, double> Car::applyAcceleration() {
 	auto [ax, ay] = lftstrategy->calculateAcceleration(this);
 	apply_acceleration(numID, ax, ay);
+	return std::make_tuple(ax, ay);
 }
 
 void Car::update() {

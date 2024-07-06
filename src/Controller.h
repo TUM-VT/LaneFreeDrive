@@ -44,7 +44,7 @@ public:
 	// Copy constructor of the class
 	Car(const Car& car);
 	void update();
-	void applyAcceleration();
+	std::tuple<double, double> applyAcceleration();
 
 	double getWidth() { return width; }
 	double getLength() { return length; }

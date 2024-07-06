@@ -33,6 +33,7 @@ map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
 std::ofstream collision_file;
+std::ofstream trajectory_file;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
 std::mt19937 speed_rand;
@@ -186,6 +187,12 @@ void simulation_initialize() {
 		collision_file << "StartTime, EndTime,Vehicle1,Vehicle2\n";
 	}
 
+	string trajectory_path = gen_config["trajectory_file"];
+	if (trajectory_path.compare("") != 0) {
+		trajectory_file.open(trajectory_path);
+		trajectory_file << "Time,Vehicle1,x,y,speed_x,speed_y,acceleration_x,acceleration_y\n";
+	}
+
 	//initialize the same seed
 	speed_rand = std::default_random_engine(stoi(gen_config["seed"]));
 	string speed_dist = gen_config["speed_dist"];
@@ -217,6 +224,18 @@ void simulation_step() {
 		strategy->update();
 	}
 
+	// Apply the acceleration
+	for (int i = 0; i < get_all_ids_size(); i++) {
+		NumericalID numID = allVehIDs[i];
+		Car* car = carsMap[numID];
+		auto[ax, ay] = car->applyAcceleration();
+		// Record the trajectory for car
+		if (trajectory_file.is_open()) {
+			double time = get_time_step_length() * get_current_time_step();
+			trajectory_file << time << "," << car->getVehName() << "," << car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "\n";
+		}
+	}
+
 	NumericalID* myedges = get_all_edges();  //returns an array with all the edges
 	NumericalID n_myedges = get_all_edges_size(); //returns the size of all the edges
 	for (int i = 0; i < n_myedges; i++) {
@@ -225,7 +244,7 @@ void simulation_step() {
 		NumericalID* ids_in_edge = get_all_ids_in_edge(myedges[i]);
 
 		for (int j = 0; j < n_edge_ids; j++) {
-			carsMap[ids_in_edge[j]]->applyAcceleration();
+			auto[ax, ay] = carsMap[ids_in_edge[j]]->applyAcceleration();
 		}
 	}
 
@@ -250,6 +269,9 @@ void simulation_step() {
 void simulation_finalize() {
 	if (collision_file.is_open()) {
 		collision_file.close();
+	}
+	if (trajectory_file.is_open()) {
+		trajectory_file.close();
 	}
 	for (const auto& strategy : used_strategies) {
 		strategy->finalize_simulation();
