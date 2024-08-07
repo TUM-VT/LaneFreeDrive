@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <filesystem>
+#include <iomanip>
 #include <unordered_set>
 #include <regex>
 #include <random>
@@ -34,6 +35,7 @@ std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
 std::ofstream collision_file;
 std::ofstream trajectory_file;
+map<string, std::tuple<double, double>> initial_positions;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
 std::mt19937 speed_rand;
@@ -154,6 +156,7 @@ void insert_vehicles() {
 
 					if (!overlaps) {
 						vehicle_positions.push_back(std::make_pair(x_val, y_val));
+						initial_positions[veh_name] = std::make_tuple(x_val, y_val);
 						insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), x_val, y_val, 0, 0, 0, 0);
 						veh_remains = false;
 					}
@@ -264,6 +267,26 @@ void simulation_step() {
 		collisionStartTimes.erase(pair);
 	}
 	collisionPairs.clear();
+
+	// Record the vehicle information in the first time step
+
+	if (get_current_time_step() == 1) {
+		auto gen_config = config["General Parameters"];
+		string vehicle_info_path = gen_config["vehicle_info_file"];
+		if (vehicle_info_path.compare("") != 0) {
+			std::ofstream vehicle_info_file;
+			vehicle_info_file.open(vehicle_info_path);
+			vehicle_info_file << "Vehicle,desired_speed,initial_x,initial_y\n";
+			for (const auto& entry : carsMap) {
+				Car* car = entry.second;
+				string veh_name = car->getVehName();
+				double desired_speed = car->getDesiredSpeed();
+				auto [x, y] = initial_positions[veh_name];
+				vehicle_info_file << veh_name << "," << desired_speed << "," << x << "," << y << "\n";
+			}
+			vehicle_info_file.close();
+		}
+	}
 }
 
 void simulation_finalize() {
