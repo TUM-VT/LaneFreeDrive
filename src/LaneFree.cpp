@@ -235,7 +235,8 @@ void simulation_step() {
 		// Record the trajectory for car
 		if (trajectory_file.is_open()) {
 			double time = get_time_step_length() * get_current_time_step();
-			trajectory_file << time << "," << car->getVehName() << "," << car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "\n";
+			trajectory_file << time << "," << car->getVehName() << "," << std::fixed << std::setprecision(2) 
+				<< car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "\n";
 		}
 	}
 
