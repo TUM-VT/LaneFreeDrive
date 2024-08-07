@@ -120,14 +120,15 @@ double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader, double gap)
 	return vsafe;
 }
 
-std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
+std::unordered_map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
 	EdgeStrips* strip = edgeStrips[ego->getCurrentEdge()];
 	vector<int> indices(strip->getTotalNoStrips());
 	std::iota(indices.begin(), indices.end(), 0);
 	int numocc = strip->getVehicleStripInfo(ego).numOccupied;
-	std::set<int> incl_indices;
+	int count_indices = 0;
 
-	std::map<int, tuple<double, Car*>> safe_velocity_map;
+	std::unordered_map<int, tuple<double, Car*>> safe_velocity_map;
+	safe_velocity_map.reserve(indices.size());
 	for (int i : indices) {
 		safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
 	}
@@ -145,16 +146,19 @@ std::map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVelocities(Car*
 			safe_vels = 0;
 		}
 		for (int k = overlap_lower; k <= overlap_upper; k++) {
-			if (incl_indices.find(k) == incl_indices.end()) {
-				incl_indices.insert(k);
+			if (std::get<1>(safe_velocity_map[k]) == nullptr){
+				count_indices++;
 				safe_velocity_map[k] = std::make_tuple(safe_vels, car);
 			}
+		}
+		if (count_indices == indices.size()) {
+			break;
 		}
 	}
 	return safe_velocity_map;
 }
 
-void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::map<int, tuple<double, Car*>> safeVelMap) {
+void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::unordered_map<int, tuple<double, Car*>> safeVelMap) {
 	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
 	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
 	int total_strips = ego_strip->getTotalNoStrips();
@@ -267,7 +271,7 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	EdgeStrips* ego_strip = edgeStrips[ego->getCurrentEdge()];
 	StripInfo ego_strip_info = ego_strip->getVehicleStripInfo(ego);
 
-	std::map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
+	std::unordered_map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
 
 	/* Calculate the longitudinal acceleration */
 	auto [vsafe_x, leader] = safe_vel_map[ego_strip_info.mainInx];

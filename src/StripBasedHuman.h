@@ -13,6 +13,7 @@
 #include <vector>
 #include <random>
 #include <fstream>
+#include <unordered_map>
 
 typedef struct
 {
@@ -63,9 +64,9 @@ private:
 	std::mt19937 rng;
 	std::normal_distribution<double> reaction_distribution;
 
-	std::map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
+	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
-	void updateStripChangeBenefit(Car* ego, std::map<int, std::tuple<double, Car*>> safeVelMap);
+	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap);
 
 	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> front_cars, std::vector<Car*> back_cars);
 
