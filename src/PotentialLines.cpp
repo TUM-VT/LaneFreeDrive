@@ -34,6 +34,7 @@ PotentialLines::PotentialLines(iniMap config) {
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
+	AdaptiveMargin = stod(secParam["AdaptiveMargin"]);
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
 	if (vsafe[0].compare("") != 0) {
 		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
@@ -48,12 +49,18 @@ PotentialLines::PotentialLines(iniMap config) {
 	speed_sigma = splitString(config["Desired Speed: Normal"]["sigma"], ",");
 
 	PLForceModel = secParam["PLForceModel"];
-	if (PLForceModel.compare("CDF") != 0 && PLForceModel.compare("UNIFORM") != 0) {
+	if (PLForceModel.compare("CDF") != 0 && PLForceModel.compare("UNIFORM") != 0 && PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
 		printf("Invalid PLForceModel for Potential Lines. Simulation will use default CDF model\n");
 		PLForceModel = "CDF";
 	}
 	if (PLForceModel.compare("CDF") == 0) {
 		cdf_map = calculate_cdf_vector(MINDesiredSpeed, MAXDesiredSpeed);
+	}
+}
+
+void PotentialLines::update() {
+	if (PLForceModel.compare("UNIFORM_ADAPTIVE") == 0) {
+		buildHumanOccupiedMap();
 	}
 }
 
@@ -68,6 +75,9 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	double fy_pl;
 	if (PLForceModel.compare("UNIFORM") == 0) {
 		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
+	}
+	else if (PLForceModel.compare("UNIFORM_ADAPTIVE") == 0) {
+		fy_pl = calculatePLForceUniformAdaptive(ego, LowerLong, UpperLong);
 	}
 	else {
 		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
@@ -234,6 +244,113 @@ double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, dou
 	double ordnungskraft = verordnungsindex * (target_line - ego->getY());
 
 	return ordnungskraft;
+}
+
+void PotentialLines::buildHumanOccupiedMap() {
+	human_free_space.clear();
+
+	double x1_last{ std::nan("") }, x2_last{ std::nan("") };
+	std::map<double, double> occupied_lats;
+	NumericalID* myedges = get_all_edges();
+	NumericalID n_myedges = get_all_edges_size();
+	for (int i = 0; i < n_myedges; i++) {
+		double edge_width = get_edge_width(myedges[i]);
+		NumericalID n_edge_ids = get_all_ids_in_edge_size(myedges[i]);
+		// Vehicles in ids_in_edge are already arranged according to logitudinal positions
+		NumericalID* ids_in_edge = get_all_ids_in_edge(myedges[i]);
+		for (int j = 0; j < n_edge_ids; j++) {
+			Car* car = carsMap[ids_in_edge[j]];
+			if (car->getModelName().compare("Human") == 0) {
+				double x1 = car->getX() - car->getLength() / 2.0 - AdaptiveMargin;
+				double x2 = car->getX() + car->getLength() / 2.0; //+ AdaptiveMargin;
+
+				double y1 = car->getY() - car->getWidth() / 2.0;
+				double y2 = car->getY() + car->getWidth() / 2.0;
+
+				if (std::isnan(x1_last)) {
+					x1_last = x1;
+					x2_last = x2;
+					occupied_lats[y1] = y2;
+				}
+				else if (x1 <= x2_last) {
+					x2_last = x2;
+					occupied_lats[y1] = y2;
+				}
+				else {
+					human_free_space[std::make_tuple(x1_last, x2_last)] = calculateAvailableLateralFromOccupied(occupied_lats, edge_width);
+					occupied_lats.clear();
+					x1_last = x1;
+					x2_last = x2;
+					occupied_lats[y1] = y2;
+				}
+			}
+		}
+		human_free_space[std::make_tuple(x1_last, x2_last)] = calculateAvailableLateralFromOccupied(occupied_lats, edge_width);
+		occupied_lats.clear();
+		x1_last = std::nan("");
+		x2_last = std::nan("");
+	}
+}
+
+std::map<double, double> PotentialLines::calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double edge_width) {
+	std::map<double, double> new_lats;
+	double y1_last{ std::nan("") }, y2_last{ std::nan("") };
+
+	for (const auto& [y1, y2] : lateral) {
+		if (std::isnan(y1_last)) {
+			new_lats[0] = y1;
+			y1_last = y1;
+			y2_last = y2;
+		}
+		else if (y1 <= y2_last) {
+			y2_last = y2;
+		}
+		else {
+			new_lats[y2_last] = y1;
+			y1_last = y1;
+			y2_last = y2;
+		}
+	}
+	new_lats[y2_last] = edge_width;
+	return new_lats;
+}
+
+double PotentialLines::calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound) {
+	double car_x = ego->getX();
+	double pl_force = std::nan("");
+	for (const auto& [range, lat_info] : human_free_space) {
+		auto [x1, x2] = range;
+		if (x1 <= car_x && car_x <= x2) {
+
+			double available_space = 0.0;
+			for (const auto& [y1, y2] : lat_info) {
+				available_space += y2 - y1;
+
+			}
+			available_space = available_space - 2.4;
+			double original_space = upper_bound - lower_bound;
+			if (available_space > 0.2 * original_space && available_space < 0.7 * original_space) {
+				double co = ego->getDesiredSpeed() - MINDesiredSpeed;
+				double areas = MAXDesiredSpeed - MINDesiredSpeed;
+				double rel_line = (available_space / areas) * co;
+
+				double space_count = 0;
+				for (const auto& [y1, y2] : lat_info) {
+					space_count += y2 - y1;
+					if (rel_line < space_count) {
+						double target_line = y1 + rel_line;
+						pl_force = verordnungsindex * (target_line - ego->getY());
+						break;
+					}
+				}
+			}
+			break;
+		}
+	}
+	if (std::isnan(pl_force)) {
+		pl_force = calculatePLForceUniform(ego, lower_bound, upper_bound);
+	}
+	return pl_force;
 }
 
 double PotentialLines::controlRoadBoundary(Car* ego, double ay) {

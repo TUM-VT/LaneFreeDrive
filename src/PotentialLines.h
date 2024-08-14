@@ -23,12 +23,17 @@ private:
 	double ReactionTime;
 	double Deccelerate;
 	double Accelerate;
+	double AdaptiveMargin;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;
 	std::map<int, double> cdf_map;
 	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
+
+	void update() override;
+
+	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
@@ -46,6 +51,12 @@ private:
 	double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 
 	double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
+
+	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
+
+	void buildHumanOccupiedMap();
+
+	std::map<double, double> calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double edge_width);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
