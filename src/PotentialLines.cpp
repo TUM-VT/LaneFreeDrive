@@ -332,8 +332,8 @@ double PotentialLines::calculatePLForceUniformAdaptive(Car* ego, double lower_bo
 
 			}
 			available_space = available_space - 2.4;
-			double original_space = upper_bound - lower_bound;
-			if (available_space > LowerThAvailSpace * original_space && available_space < UpperThAvailSpace * original_space) {
+			double ratio = available_space / (upper_bound - lower_bound);
+			if (ratio > LowerThAvailSpace && ratio < UpperThAvailSpace) {
 				double co = ego->getDesiredSpeed() - MINDesiredSpeed;
 				double areas = MAXDesiredSpeed - MINDesiredSpeed;
 				double rel_line = (available_space / areas) * co;
