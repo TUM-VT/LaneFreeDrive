@@ -24,6 +24,8 @@ private:
 	double Deccelerate;
 	double Accelerate;
 	double AdaptiveMargin;
+	double LowerThAvailSpace;
+	double UpperThAvailSpace;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;

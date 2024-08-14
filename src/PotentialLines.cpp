@@ -35,6 +35,10 @@ PotentialLines::PotentialLines(iniMap config) {
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
 	AdaptiveMargin = stod(secParam["AdaptiveMargin"]);
+	std::vector<string> adaptivePLThreshold = splitString(secParam["ThreshAvailSpace"], ",");
+	LowerThAvailSpace = stod(adaptivePLThreshold[0]);
+	UpperThAvailSpace = stod(adaptivePLThreshold[1]);
+
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
 	if (vsafe[0].compare("") != 0) {
 		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
@@ -329,7 +333,7 @@ double PotentialLines::calculatePLForceUniformAdaptive(Car* ego, double lower_bo
 			}
 			available_space = available_space - 2.4;
 			double original_space = upper_bound - lower_bound;
-			if (available_space > 0.2 * original_space && available_space < 0.7 * original_space) {
+			if (available_space > LowerThAvailSpace * original_space && available_space < UpperThAvailSpace * original_space) {
 				double co = ego->getDesiredSpeed() - MINDesiredSpeed;
 				double areas = MAXDesiredSpeed - MINDesiredSpeed;
 				double rel_line = (available_space / areas) * co;
