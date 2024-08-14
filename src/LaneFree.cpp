@@ -204,6 +204,7 @@ void simulation_initialize() {
 		printf("Speed distribution %s not recognized. Setting it to empty field.\n", speed_dist.c_str());
 		config["General Parameters"]["speed_dist"] = "";
 	}
+	carsMap.clear();
 	printf("\nInitializiation over!!!\n");
 }
 
