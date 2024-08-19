@@ -241,18 +241,6 @@ void simulation_step() {
 		}
 	}
 
-	NumericalID* myedges = get_all_edges();  //returns an array with all the edges
-	NumericalID n_myedges = get_all_edges_size(); //returns the size of all the edges
-	for (int i = 0; i < n_myedges; i++) {
-
-		NumericalID n_edge_ids = get_all_ids_in_edge_size(myedges[i]);
-		NumericalID* ids_in_edge = get_all_ids_in_edge(myedges[i]);
-
-		for (int j = 0; j < n_edge_ids; j++) {
-			auto[ax, ay] = carsMap[ids_in_edge[j]]->applyAcceleration();
-		}
-	}
-
 	// Record the collisions
 	double current_time = get_time_step_length() * get_current_time_step();
 	std::set<std::tuple<Car*, Car*>> delete_pairs;
