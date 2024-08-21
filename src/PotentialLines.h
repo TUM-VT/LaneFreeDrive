@@ -10,7 +10,7 @@ public:
 	PotentialLines(iniMap config);
 	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 
-private:
+protected:
 
 	double FrontDistnce;
 	double BackDistance;
@@ -23,9 +23,6 @@ private:
 	double ReactionTime;
 	double Deccelerate;
 	double Accelerate;
-	double AdaptiveMargin;
-	double LowerThAvailSpace;
-	double UpperThAvailSpace;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;
@@ -35,7 +32,7 @@ private:
 
 	void update() override;
 
-	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
+	std::map <Car*, Car*> leader_map;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
@@ -45,7 +42,7 @@ private:
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
 
-	double calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors);
+	double calculateSafeAcc(Car* ego, Car* leader);
 
 	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
 
@@ -55,12 +52,6 @@ private:
 	double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 
 	double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
-
-	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
-
-	void buildHumanOccupiedMap();
-
-	std::map<double, double> calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double edge_width);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html

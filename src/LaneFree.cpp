@@ -14,6 +14,7 @@
 #include <fstream>
 #include "Controller.h"
 #include "PotentialLines.h"
+#include "AdaptivePotentialLines.h"
 #include "StripBasedHuman.h"
 #define DEFINE_VARIABLES
 
@@ -180,6 +181,7 @@ void simulation_initialize() {
 	insert_vehicles();
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
+	strategies["AdaptivePotentialLines"] = new AdaptivePotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 
 	// File to store collisions
