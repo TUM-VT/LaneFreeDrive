@@ -114,10 +114,9 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, st
 	return std::make_tuple(totalFX, totalFy);
 }
 
-double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors) {
+Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors) {
 	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0;
 	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0;
-
 	Car* leader = nullptr;
 	for (Car* car : front_neighbors) {
 		double delta_x = car->getX() - ego->getX();
@@ -130,8 +129,13 @@ double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighb
 			}
 		}
 	}
+	return leader;
+}
+
+double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors) {
+	Car* leader = calculateLeader(ego, front_neighbors);
 	
-	double desired_speed = get_desired_speed(ego->getNumId());
+	double desired_speed = ego->getDesiredSpeed();
 	double time_step = get_time_step_length();
 	double ax{1000};
 	if (leader != nullptr) {

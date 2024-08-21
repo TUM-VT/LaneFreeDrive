@@ -47,6 +47,8 @@ private:
 
 	double calculateSafeAcc(Car* ego, std::vector<Car*> front_neighbors);
 
+	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
+
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
 
