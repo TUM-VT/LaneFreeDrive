@@ -20,7 +20,7 @@ protected:
 
 	void update() override;
 
-	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
+	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b) override;
 
 	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
 

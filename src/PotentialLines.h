@@ -38,7 +38,7 @@ protected:
 
 	std::tuple<double, double> calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour);
 
-	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
+	virtual std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
 

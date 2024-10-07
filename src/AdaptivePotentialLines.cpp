@@ -173,11 +173,14 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 		auto [x1, x2] = range;
 		if (x1 <= car_x && car_x <= x2) {
 
+			std::map<double, double> possible_lats;
 			double available_space = 0.0;
+			double max_vehicle_width = 1.9;
 			for (const auto& [y1, y2] : lat_info) {
-				double gap = y2 - y1;
-				if (gap > ego->getWidth()) {
-					available_space += gap;
+				double pl_space = y2 - y1 - max_vehicle_width;
+				if (pl_space > 0) {
+					available_space += pl_space;
+					possible_lats[y1 + 0.5 * max_vehicle_width] = y2 - 0.5 * max_vehicle_width;
 				}
 			}
 			double ratio = available_space / 10.2;
@@ -187,14 +190,17 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 				double rel_line = (available_space / areas) * co;
 
 				double space_count = 0;
-				for (const auto& [y1, y2] : lat_info) {
-					double gap = y2 - y1;
-					if (gap < ego->getWidth())
-						continue;
-					space_count += gap;
+				for (const auto& [y1, y2] : possible_lats) {
+					double pl_space = y2 - y1;
+					space_count += pl_space;
 					if (rel_line < space_count) {
 						double target_line = y1 + rel_line;
-						pl_force = verordnungsindex * (target_line - ego->getY());
+						Car* leader = leader_map[ego];
+						double factor = verordnungsindex;
+						if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
+							double factor = verordnungsindex;
+						}
+						pl_force = factor * (target_line - ego->getY());
 						break;
 					}
 				}
