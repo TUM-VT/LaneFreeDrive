@@ -13,8 +13,6 @@ public:
 protected:
 
 	double AdaptiveMargin;
-	double LowerThAvailSpace;
-	double UpperThAvailSpace;
 	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
 	std::set <Car*> cars_with_modified_pl;
 

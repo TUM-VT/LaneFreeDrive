@@ -9,9 +9,6 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 
 	map<string, string> secParam = config["Adaptive Potential Lines Parameters"];
 	AdaptiveMargin = stod(secParam["AdaptiveMargin"]);
-	std::vector<string> adaptivePLThreshold = splitString(secParam["ThreshAvailSpace"], ",");
-	LowerThAvailSpace = stod(adaptivePLThreshold[0]);
-	UpperThAvailSpace = stod(adaptivePLThreshold[1]);
 	PLForceModel = secParam["PLForceModel"];
 	if (PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
 		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
@@ -183,26 +180,23 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 					possible_lats[y1 + 0.5 * max_vehicle_width] = y2 - 0.5 * max_vehicle_width;
 				}
 			}
-			double ratio = available_space / 10.2;
-			if (ratio > LowerThAvailSpace && ratio < UpperThAvailSpace) {
-				double co = ego->getDesiredSpeed() - MINDesiredSpeed;
-				double areas = MAXDesiredSpeed - MINDesiredSpeed;
-				double rel_line = (available_space / areas) * co;
+			double co = ego->getDesiredSpeed() - MINDesiredSpeed;
+			double areas = MAXDesiredSpeed - MINDesiredSpeed;
+			double rel_line = (available_space / areas) * co;
 
-				double space_count = 0;
-				for (const auto& [y1, y2] : possible_lats) {
-					double pl_space = y2 - y1;
-					space_count += pl_space;
-					if (rel_line < space_count) {
-						double target_line = y1 + rel_line;
-						Car* leader = leader_map[ego];
+			double space_count = 0;
+			for (const auto& [y1, y2] : possible_lats) {
+				double pl_space = y2 - y1;
+				space_count += pl_space;
+				if (rel_line < space_count) {
+					double target_line = y1 + rel_line;
+					Car* leader = leader_map[ego];
+					double factor = verordnungsindex;
+					if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
 						double factor = verordnungsindex;
-						if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
-							double factor = verordnungsindex;
-						}
-						pl_force = factor * (target_line - ego->getY());
-						break;
 					}
+					pl_force = factor * (target_line - ego->getY());
+					break;
 				}
 			}
 			break;
