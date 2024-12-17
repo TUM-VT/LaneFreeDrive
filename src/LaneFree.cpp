@@ -209,7 +209,7 @@ void simulation_initialize() {
 	string trajectory_path = gen_config["trajectory_file"];
 	if (trajectory_path.compare("") != 0) {
 		trajectory_file.open(trajectory_path);
-		trajectory_file << "Time,Vehicle1,x,y,speed_x,speed_y,acceleration_x,acceleration_y\n";
+		trajectory_file << "Time,Vehicle1,x,y,speed_x,speed_y,acceleration_x,acceleration_y,potential_line\n";
 	}
 	lateral_speed_file = gen_config["lateral_speed_file"];
 
@@ -256,8 +256,12 @@ void simulation_step() {
 		// Record the trajectory for car
 		if (trajectory_file.is_open()) {
 			double time = get_time_step_length() * get_current_time_step();
+			double pl = 0;
+			if (car->getLFTStrategy() == strategies["PotentialLines"] || car->getLFTStrategy() == strategies["AdaptivePotentialLines"]) {
+				pl = ((PotentialLines*)car->getLFTStrategy())->getAssignedPL(car);
+			}
 			trajectory_file << time << "," << car->getVehName() << "," << std::fixed << std::setprecision(2) 
-				<< car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "\n";
+				<< car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "," << pl << "\n";
 		}
 	}
 
