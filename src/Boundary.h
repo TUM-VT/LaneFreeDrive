@@ -1,7 +1,11 @@
 #pragma once
 #include "Controller.h"
-#include "LaneFree.h"
 #include <vector>
+#ifdef __unix__
+#include "LaneFree_linux.h"
+#elif defined(WIN32)
+#include <LaneFree.h>
+#endif
 
 using iniMap = std::map<std::string, std::map<std::string, std::string>>;
 

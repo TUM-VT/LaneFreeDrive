@@ -1,5 +1,9 @@
 #include "PotentialLines.h"
-#include "LaneFree.h"
+#ifdef __unix__
+#include "LaneFree_linux.h"
+#elif defined(WIN32)
+#include <LaneFree.h>
+#endif
 
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))

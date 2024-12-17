@@ -20,6 +20,7 @@
 
 #ifdef __unix__
 #include "LaneFree_linux.h"
+#include <dlfcn.h>
 #elif defined(WIN32)
 #include <LaneFree.h>
 #endif
@@ -43,9 +44,16 @@ std::mt19937 speed_rand;
 
 iniMap readConfigFile(char* file_name) {
 	// Get path of the dll plugin for the lanefree traffic
-	HMODULE hModule = GetModuleHandle("libLaneFreePlugin.dll");
-	char dllPath[MAX_PATH];
-	GetModuleFileName(hModule, dllPath, MAX_PATH);
+	#ifdef __unix__
+		Dl_info dl_info;
+		dladdr((void*)readConfigFile, &dl_info);
+		std::string dllPath = dl_info.dli_fname;
+	#elif defined(WIN32)
+		HMODULE hModule = GetModuleHandle("libLaneFreePlugin.dll");
+		char dllPath[MAX_PATH];
+		GetModuleFileName(hModule, dllPath, MAX_PATH);
+	#endif
+
 	fs::path myPath(dllPath);
 	// Replace the dll name with the name of the file
 	myPath.replace_filename(file_name);
@@ -158,7 +166,11 @@ void insert_vehicles() {
 					if (!overlaps) {
 						vehicle_positions.push_back(std::make_pair(x_val, y_val));
 						initial_positions[veh_name] = std::make_tuple(x_val, y_val);
-						insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), x_val, y_val, 0, 0, 0, 0);
+						#ifdef __unix__
+							insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), x_val, y_val, 0, 0);
+						#elif defined(WIN32)
+							insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), x_val, y_val, 0, 0, 0, 0);
+						#endif
 						veh_remains = false;
 					}
 				}
@@ -199,7 +211,7 @@ void simulation_initialize() {
 	}
 
 	//initialize the same seed
-	speed_rand = std::default_random_engine(stoi(gen_config["seed"]));
+	speed_rand = std::mt19937(stoi(gen_config["seed"]));
 	string speed_dist = gen_config["speed_dist"];
 	// Check if the speed dist is NORMAL, UNIFORM or Empty string and print an error message if it is not
 	if (speed_dist.compare("NORMAL") != 0 && speed_dist.compare("UNIFORM") != 0 && speed_dist.compare("") != 0) {

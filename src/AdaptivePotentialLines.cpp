@@ -1,6 +1,11 @@
+#pragma once
 #include "AdaptivePotentialLines.h"
 #include <cmath>
+#ifdef __unix__
+#include "LaneFree_linux.h"
+#elif defined(WIN32)
 #include "LaneFree.h"
+#endif
 
 using std::map;
 using std::string;
