@@ -320,6 +320,7 @@ void simulation_finalize() {
 	for (const auto& strategy : used_strategies) {
 		strategy->finalize_simulation();
 	}
+	used_strategies.clear();
 }
 
 // Function to generate a single random sample
