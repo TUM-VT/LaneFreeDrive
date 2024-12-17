@@ -40,6 +40,8 @@ std::ofstream trajectory_file;
 map<string, std::tuple<double, double>> initial_positions;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
+std::string lateral_speed_file;
+map<Car*, double> abs_lateral_speeds;
 std::mt19937 speed_rand;
 
 iniMap readConfigFile(char* file_name) {
@@ -209,6 +211,7 @@ void simulation_initialize() {
 		trajectory_file.open(trajectory_path);
 		trajectory_file << "Time,Vehicle1,x,y,speed_x,speed_y,acceleration_x,acceleration_y\n";
 	}
+	lateral_speed_file = gen_config["lateral_speed_file"];
 
 	//initialize the same seed
 	speed_rand = std::mt19937(stoi(gen_config["seed"]));
@@ -219,6 +222,7 @@ void simulation_initialize() {
 		config["General Parameters"]["speed_dist"] = "";
 	}
 	carsMap.clear();
+	abs_lateral_speeds.clear();
 	printf("\nInitializiation over!!!\n");
 }
 
@@ -232,6 +236,7 @@ void simulation_step() {
 			Car* car = new Car(numID, config, strategies);
 			carsMap[numID] = car;
 			used_strategies.insert(car->getLFTStrategy());
+			abs_lateral_speeds[car] = 0.0;
 		}
 		carsMap[numID]->update();
 	}
@@ -246,6 +251,7 @@ void simulation_step() {
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
 		Car* car = carsMap[numID];
+		abs_lateral_speeds[car] += std::abs(car->getSpeedY());
 		auto[ax, ay] = car->applyAcceleration();
 		// Record the trajectory for car
 		if (trajectory_file.is_open()) {
@@ -300,6 +306,17 @@ void simulation_finalize() {
 	if (trajectory_file.is_open()) {
 		trajectory_file.close();
 	}
+	if (lateral_speed_file.compare("") != 0) {
+		std::ofstream speed_file;
+		speed_file.open(lateral_speed_file);
+		speed_file << "Vehicle,mean_lateral_speed\n";
+		for (const auto& [car, speed] : abs_lateral_speeds) {
+			double mean_speed = speed / get_current_time_step();
+			speed_file << car->getVehName() << "," << mean_speed << "\n";
+		}
+		speed_file.close();
+	}
+
 	for (const auto& strategy : used_strategies) {
 		strategy->finalize_simulation();
 	}
