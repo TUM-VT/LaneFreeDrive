@@ -64,6 +64,7 @@ PotentialLines::PotentialLines(iniMap config) {
 
 void PotentialLines::update() {
 	leader_map.clear();
+	assigned_pl.clear();
 	for (const auto& [key, car] : carsMap) {
 		std::vector<Car*> front_neighbors = getNeighbours(car, this->FrontDistnce);
 		leader_map[car] = calculateLeader(car, front_neighbors);
@@ -239,6 +240,7 @@ double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double 
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
+	assigned_pl[ego] = target_line;
 	double plForce = verordnungsindex * (target_line - ego->getY());
 	return plForce;
 }
@@ -251,7 +253,7 @@ double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, dou
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + ((upper_bound - lower_bound) / areas) * co;
-
+	assigned_pl[ego] = target_line;
 	double ordnungskraft = verordnungsindex * (target_line - ego->getY());
 
 	return ordnungskraft;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Controller.h"
 #include <set>
+#include <cmath>
 
 
 class PotentialLines : public LFTStrategy {
@@ -9,6 +10,7 @@ public:
 
 	PotentialLines(iniMap config);
 	std::tuple<double, double> calculateAcceleration(Car* ego) override;
+	double getAssignedPL(Car* car) { return assigned_pl[car]; }
 
 protected:
 
@@ -33,6 +35,8 @@ protected:
 	void update() override;
 
 	std::map <Car*, Car*> leader_map;
+
+	std::map <Car*, double> assigned_pl;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 

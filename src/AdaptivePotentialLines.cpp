@@ -291,6 +291,7 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 					if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
 						double factor = verordnungsindex;
 					}
+					assigned_pl[ego] = target_line;
 					pl_force = factor * (target_line - ego->getY());
 					break;
 				}
