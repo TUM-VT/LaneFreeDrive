@@ -51,9 +51,9 @@ protected:
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
 
-	double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
+	double calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 
-	double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
+	double calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
