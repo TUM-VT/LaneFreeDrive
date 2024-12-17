@@ -1,4 +1,5 @@
 #include "AdaptivePotentialLines.h"
+#include <cmath>
 #include "LaneFree.h"
 
 using std::map;
@@ -8,16 +9,36 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 	printf("Setting parameters for Adaptive Potential Lines strategy\n");
 
 	map<string, string> secParam = config["Adaptive Potential Lines Parameters"];
-	AdaptiveMargin = stod(secParam["AdaptiveMargin"]);
+	AdaptiveAlgorithm = secParam["AdaptiveAlgorithm"];
+	ConstantMargin = stod(secParam["ConstantMargin"]);
+	AdaptiveFollowerDistance = stod(secParam["AdaptiveFollowerDistance"]);
 	PLForceModel = secParam["PLForceModel"];
 	if (PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
 		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
 		PLForceModel = "UNIFORM_ADAPTIVE";
 	}
+	std::set<std::string> validAlgorithms = { "ConstantMargin", "AdaptiveMarginOne", "AdaptiveMarginTwo", "AdaptiveMarginThree", "AdaptiveMarginFour", "AdaptiveMarginFive"};
+	if (validAlgorithms.find(AdaptiveAlgorithm) == validAlgorithms.end()) {
+		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, AdaptiveMarginOne or AdaptiveMarginTwo. Using the default value AdaptiveMarginOne\n");
+		AdaptiveAlgorithm = "AdaptiveMarginOne";
+	}
 }
 
 void AdaptivePotentialLines::update() {
 	PotentialLines::update();
+	follower_map.clear();
+	std::map <Car*, Car*> leader_map_temp;
+	for (const auto& [key, car] : carsMap) {
+		follower_map[car] = nullptr;
+		std::vector<Car*> front_neighbors = getNeighbours(car, AdaptiveFollowerDistance);
+		leader_map_temp[car] = calculateLeader(car, front_neighbors);
+	}
+	for (const auto& [follower, leader] : leader_map_temp) {
+		if (leader != nullptr) {
+			follower_map[leader] = follower;
+		}
+	}
+
 	buildHumanOccupiedMap();
 	cars_with_modified_pl.clear();
 	for (const auto& [key, car] : carsMap) {
@@ -93,6 +114,72 @@ std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car
 	return std::make_tuple(fx, fy);
 }
 
+double AdaptivePotentialLines::calculateSurroundingSpeed(Car* car) {
+	double avg_speed{ 0 }, count{ 0 };
+	double y1 = car->getY() - car->getWidth() / 2.0;
+	double y2 = car->getY() + car->getWidth() / 2.0;
+	for (Car* neighbour : getNeighbours(car, -20.0)) {
+		// Only count the neigbours that have different lateral positions
+		if ((neighbour->getY() < y1) || (neighbour->getY() > y2)) {
+			avg_speed += neighbour->getSpeedX();
+			count++;
+		}
+	}
+	if (count > 0) {
+		avg_speed /= count;
+	}
+	else avg_speed = std::nan("");
+	return avg_speed;
+}
+
+double AdaptivePotentialLines::calculateAPLMargin(Car* car) {
+	double margin = std::nan("");
+
+	if (AdaptiveAlgorithm.compare("ConstantMargin") == 0) {
+		margin = ConstantMargin;
+		return margin;
+	}
+
+	if (AdaptiveAlgorithm.compare("AdaptiveMarginThree") == 0) {
+		double avg_speed = calculateSurroundingSpeed(car);
+		// If there are no neigbour, then also consider the space for modifying the PL
+		if (std::isnan(avg_speed) || car->getSpeedX() < avg_speed) {
+			margin = ConstantMargin;
+		}
+		return margin;
+	}
+
+	// Check if there is a follower
+	Car* follower = follower_map[car];
+
+	if (AdaptiveAlgorithm.compare("AdaptiveMarginFive") == 0) {
+		if (follower != nullptr) {
+			double dist_to_follower = car->getX() - car->getLength() - follower->getX();
+			margin = dist_to_follower + follower->getLength();
+		}
+		else {
+			margin = ConstantMargin;
+		}
+		return margin;
+	}
+
+	if (follower != nullptr) {
+		double safe_vel = calculateSafeVelocity(follower, car);
+		double avg_speed = calculateSurroundingSpeed(car);
+		// If there are no neigbour, then also consider the space for modifying the PL
+		if (std::isnan(avg_speed)) {
+			avg_speed = 1000;
+		}
+		if ((AdaptiveAlgorithm.compare("AdaptiveMarginOne") == 0 && follower->getSpeedX() < 1.05 * safe_vel && car->getSpeedX() < avg_speed)
+		|| (AdaptiveAlgorithm.compare("AdaptiveMarginTwo") == 0 && car->getSpeedX() < avg_speed )
+		|| (AdaptiveAlgorithm.compare("AdaptiveMarginFour") == 0)){
+			double dist_to_follower = car->getX() - car->getLength() - follower->getX();
+			margin = dist_to_follower + follower->getLength();
+		}
+	}
+	return margin;
+}
+
 
 void AdaptivePotentialLines::buildHumanOccupiedMap() {
 	human_free_space.clear();
@@ -109,8 +196,12 @@ void AdaptivePotentialLines::buildHumanOccupiedMap() {
 		for (int j = 0; j < n_edge_ids; j++) {
 			Car* car = carsMap[ids_in_edge[j]];
 			if (car->getModelName().compare("Human") == 0) {
-				double x1 = car->getX() - car->getLength() / 2.0 - AdaptiveMargin;
-				double x2 = car->getX() + car->getLength() / 2.0; //+ AdaptiveMargin;
+				double margin = calculateAPLMargin(car);
+				if (std::isnan(margin)) {
+					continue;
+				}
+				double x1 = car->getX() - car->getLength() / 2.0 - margin;
+				double x2 = car->getX() + car->getLength() / 2.0;
 
 				double y1 = car->getY() - car->getWidth() / 2.0;
 				double y2 = car->getY() + car->getWidth() / 2.0;

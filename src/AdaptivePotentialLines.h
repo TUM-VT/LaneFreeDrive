@@ -12,7 +12,10 @@ public:
 
 protected:
 
-	double AdaptiveMargin;
+	double ConstantMargin;
+	double AdaptiveFollowerDistance;
+	std::string AdaptiveAlgorithm;
+	std::map <Car*, Car*> follower_map;
 	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
 	std::set <Car*> cars_with_modified_pl;
 
@@ -22,8 +25,12 @@ protected:
 
 	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
 
+	double calculateAPLMargin(Car* car);
+
 	void buildHumanOccupiedMap();
 
 	std::map<double, double> calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double edge_width);
+
+	double calculateSurroundingSpeed(Car* car);
 
 };

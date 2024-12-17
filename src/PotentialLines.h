@@ -42,6 +42,8 @@ protected:
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
 
+	double calculateSafeVelocity(Car* ego, Car* leader);
+
 	double calculateSafeAcc(Car* ego, Car* leader);
 
 	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
