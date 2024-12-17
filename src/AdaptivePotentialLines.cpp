@@ -17,10 +17,10 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
 		PLForceModel = "UNIFORM_ADAPTIVE";
 	}
-	std::set<std::string> validAlgorithms = { "ConstantMargin", "AdaptiveMarginOne", "AdaptiveMarginTwo", "AdaptiveMarginThree", "AdaptiveMarginFour", "AdaptiveMarginFive"};
+	std::set<std::string> validAlgorithms = { "ConstantMargin", "SVAM", "FAM", "NSCM", "NAM", "AM"};
 	if (validAlgorithms.find(AdaptiveAlgorithm) == validAlgorithms.end()) {
-		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, AdaptiveMarginOne or AdaptiveMarginTwo. Using the default value AdaptiveMarginOne\n");
-		AdaptiveAlgorithm = "AdaptiveMarginOne";
+		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM or AM. Using the default value ConstantMargin\n");
+		AdaptiveAlgorithm = "ConstantMargin";
 	}
 }
 
@@ -140,7 +140,7 @@ double AdaptivePotentialLines::calculateAPLMargin(Car* car) {
 		return margin;
 	}
 
-	if (AdaptiveAlgorithm.compare("AdaptiveMarginThree") == 0) {
+	if (AdaptiveAlgorithm.compare("NSCM") == 0) {
 		double avg_speed = calculateSurroundingSpeed(car);
 		// If there are no neigbour, then also consider the space for modifying the PL
 		if (std::isnan(avg_speed) || car->getSpeedX() < avg_speed) {
@@ -152,7 +152,7 @@ double AdaptivePotentialLines::calculateAPLMargin(Car* car) {
 	// Check if there is a follower
 	Car* follower = follower_map[car];
 
-	if (AdaptiveAlgorithm.compare("AdaptiveMarginFive") == 0) {
+	if (AdaptiveAlgorithm.compare("AM") == 0) {
 		if (follower != nullptr) {
 			double dist_to_follower = car->getX() - car->getLength() - follower->getX();
 			margin = dist_to_follower + follower->getLength();
@@ -170,9 +170,9 @@ double AdaptivePotentialLines::calculateAPLMargin(Car* car) {
 		if (std::isnan(avg_speed)) {
 			avg_speed = 1000;
 		}
-		if ((AdaptiveAlgorithm.compare("AdaptiveMarginOne") == 0 && follower->getSpeedX() < 1.05 * safe_vel && car->getSpeedX() < avg_speed)
-		|| (AdaptiveAlgorithm.compare("AdaptiveMarginTwo") == 0 && car->getSpeedX() < avg_speed )
-		|| (AdaptiveAlgorithm.compare("AdaptiveMarginFour") == 0)){
+		if ((AdaptiveAlgorithm.compare("SVAM") == 0 && follower->getSpeedX() < 1.05 * safe_vel && car->getSpeedX() < avg_speed)
+		|| (AdaptiveAlgorithm.compare("FAM") == 0 && car->getSpeedX() < avg_speed )
+		|| (AdaptiveAlgorithm.compare("NAM") == 0)){
 			double dist_to_follower = car->getX() - car->getLength() - follower->getX();
 			margin = dist_to_follower + follower->getLength();
 		}
