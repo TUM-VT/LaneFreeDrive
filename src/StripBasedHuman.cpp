@@ -1,6 +1,10 @@
 #include "StripBasedHuman.h"
 #include "Controller.h"
-#include "LaneFree.h"
+#ifdef __unix__
+#include "LaneFree_linux.h"
+#elif defined(WIN32)
+#include <LaneFree.h>
+#endif
 #include <vector>
 #include <cmath>
 #include <algorithm>
