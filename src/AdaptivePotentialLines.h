@@ -1,6 +1,7 @@
 #pragma once
 #include "PotentialLines.h"
 #include <set>
+#include <fstream>
 
 
 class AdaptivePotentialLines : public PotentialLines {
@@ -18,8 +19,12 @@ protected:
 	std::map <Car*, Car*> follower_map;
 	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
 	std::set <Car*> cars_with_modified_pl;
+	std::ofstream sync_file;
+	std::string syncfile_name;
 
 	void update() override;
+
+	void finish_time_step() override;
 
 	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b) override;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <vector>
 #include <string>
 #include <unordered_set>
 #include "Boundary.h"
@@ -26,6 +27,7 @@ public:
 	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, after calling getNeighbours, use getCircularX of Car to get the corrected x position of the vehicle.
 	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
+	virtual void finish_time_step() {};
 	static bool isCircular() { return circular; }
 	static void setCircular(iniMap config);
 	// Extracts the parameters of section name with the prefix from the config file

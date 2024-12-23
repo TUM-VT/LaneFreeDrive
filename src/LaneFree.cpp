@@ -265,6 +265,11 @@ void simulation_step() {
 		}
 	}
 
+	// Finish the time step
+	for (const auto& strategy : used_strategies) {
+		strategy->finish_time_step();
+	}
+
 	// Record the collisions
 	double current_time = get_time_step_length() * get_current_time_step();
 	std::set<std::tuple<Car*, Car*>> delete_pairs;

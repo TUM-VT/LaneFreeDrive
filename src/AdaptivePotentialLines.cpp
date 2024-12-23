@@ -27,6 +27,7 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM or AM. Using the default value ConstantMargin\n");
 		AdaptiveAlgorithm = "ConstantMargin";
 	}
+	syncfile_name = secParam["SyncFile"];
 }
 
 void AdaptivePotentialLines::update() {
@@ -56,6 +57,16 @@ void AdaptivePotentialLines::update() {
 				break;
 			}
 		}
+	}
+	if (syncfile_name.compare("") != 0) {
+		sync_file.open("sync_adaptive.csv");
+		sync_file << "Step,Vehicle,Modified_PL,x1,x2,pl_y\n";
+	}
+}
+
+void AdaptivePotentialLines::finish_time_step() {
+	if (sync_file.is_open()) {
+		sync_file.close();
 	}
 }
 
@@ -293,6 +304,10 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 					}
 					assigned_pl[ego] = target_line;
 					pl_force = factor * (target_line - ego->getY());
+					if (sync_file.is_open()) {
+						sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "Y" << ","
+							<< x1 << "," << x2 << "," << target_line << "\n";
+					}
 					break;
 				}
 			}
@@ -300,6 +315,9 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 		}
 	}
 	if (std::isnan(pl_force)) {
+		if (sync_file.is_open()){
+			sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "N" << ",,,\n";
+		}
 		pl_force = calculatePLForceUniform(ego, lower_bound, upper_bound);
 	}
 	return pl_force;
