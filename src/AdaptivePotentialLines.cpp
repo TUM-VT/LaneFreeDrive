@@ -59,7 +59,7 @@ void AdaptivePotentialLines::update() {
 		}
 	}
 	if (syncfile_name.compare("") != 0) {
-		sync_file.open("sync_adaptive.csv");
+		sync_file.open(syncfile_name);
 		sync_file << "Step,Vehicle,Modified_PL,x1,x2,pl_y\n";
 	}
 }
