@@ -8,45 +8,11 @@ import sys
 import xml.etree.ElementTree as ET
 import traceback
 
-def xml_to_dataframe_from_zip(xml_file):
-    # Parse the XML file
-    tree = ET.parse(xml_file)
-    root = tree.getroot()
-
-    # Initialize an empty list to hold the data
-    data = []
-
-    # Extract data from each interval element
-    for interval in root.findall('.//interval'):
-        record = {
-            'begin': interval.get('begin'),
-            'end': interval.get('end'),
-            'id': interval.get('id'),
-            'nVehContrib': interval.get('nVehContrib'),
-            'flow': interval.get('flow'),
-            'occupancy': interval.get('occupancy'),
-            'speed': interval.get('speed'),
-            'harmonicMeanSpeed': interval.get('harmonicMeanSpeed'),
-            'length': interval.get('length'),
-            'nVehEntered': interval.get('nVehEntered')
-        }
-        data.append(record)
-
-    # Convert the list of dictionaries into a DataFrame
-    df = pd.DataFrame(data)
-
-    # Convert numeric columns from strings to appropriate types
-    numeric_cols = ['begin', 'end', 'nVehContrib', 'flow', 'occupancy', 'speed', 'harmonicMeanSpeed', 'length',
-                    'nVehEntered']
-    df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric)
-
-    return df
-
 
 def start_sumo_simulation(sumo_cfg_path, default_lft_config_path,  lft_config_path, end_time,
                           relative_output_path) -> subprocess.Popen:
     # Set your SUMO binary path and configuration file
-    sumo_binary = Path("SUMO\\bin\\sumo.exe")
+    sumo_binary = Path("SUMO\\bin\\sumo-gui.exe")
     lft_plugin_path = "x64-Debug"
 
     # Create a dictionary for custom environment variables
@@ -59,16 +25,6 @@ def start_sumo_simulation(sumo_cfg_path, default_lft_config_path,  lft_config_pa
     # Compose the command line
     sumo_cmd = [str(sumo_binary), "-c", sumo_cfg_path, "--end", str(end_time), "--start",
                 "--output-prefix", relative_output_path + "\\"]
-    # Check the etector file; if the simulation has already been performed, skip it.
-    detector_file = Path(sumo_cfg_path).parent.joinpath(relative_output_path, "detector_0.xml")
-    if detector_file.exists() is True:
-        try:
-            df = xml_to_dataframe_from_zip(detector_file)
-            if df["end"].iloc[-1] == end_time:
-                return None
-        except:
-            print(f"Folder {str(detector_file)} has some issues")
-            traceback.print_exc()
 
     # Start the SUMO process with custom environment
     output_file_path = Path(sumo_cfg_path).parent.joinpath(relative_output_path, "lft_output.txt")
