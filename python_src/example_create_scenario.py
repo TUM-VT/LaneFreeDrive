@@ -12,7 +12,7 @@ sumo_config_file = Path("SUMO_Runs\\example_ring_road\\ring.sumocfg")
 
 # The default ini configuration to be used as the base configuration. By default, it takes it from the src folder.
 # You can change it if a different default configuration is needed.
-default_ini_path = Path().absolute().parent.joinpath("src", "default_config", "default_config.ini")
+default_ini_path = Path().absolute().parent.joinpath("src", "lft_plugin_config_files", "default_config.ini")
 
 # Create the main study folder and copy the default config file.
 parent_folder = sumo_config_file.parent.joinpath("Experiments", experiments_name)
