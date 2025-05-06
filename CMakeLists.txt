@@ -36,5 +36,9 @@ else()
 	target_include_directories(LaneFreePlugin PRIVATE ${SIMPLEINI_INCLUDE_DIRS})
 endif()
 
-configure_file(src/config.ini config.ini)
-configure_file(src/default_config/default_config.ini default_config/default_config.ini)
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/lft_plugin_config_files/config.ini")
+    configure_file(src/lft_plugin_config_files/default_config.ini ${CMAKE_CURRENT_SOURCE_DIR}/src/lft_plugin_config_files/config.ini COPYONLY)
+endif()
+
+configure_file(src/lft_plugin_config_files/config.ini config.ini)
+configure_file(src/lft_plugin_config_files/default_config.ini default_config.ini)

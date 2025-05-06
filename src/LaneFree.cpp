@@ -189,7 +189,7 @@ void simulation_initialize() {
 		config_path = "config.ini";
 	}
 	if (default_path == NULL) {
-		default_path = "default_config\\default_config.ini";
+		default_path = "default_config.ini";
 	}
 	config = readConfigFileFallback(config_path, default_path);
 	insert_vehicles();
