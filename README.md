@@ -34,27 +34,32 @@ purpose of conciseness and bringing multiple LFT methods at one place, the curre
 configuration files to select among various LFT methods and set their parameters.
 
 ### Which .ini files are used?
-- **src\default_config\default_config.ini**:		This is the default configuration file that lists all possible parameters of LFT plugin along with their default and possible values, and short description of each parameter. This serves as the main templete setting parameters for LFT plugin.
+- **src\lft_plugin_config_files\default_config.ini**:		This is the default configuration file that lists all possible parameters of LFT plugin along with their default and possible values, and short description of each parameter. This serves as the main templete setting parameters for LFT plugin.
 - **scenario specific config.ini**: 		Besides the .ini file for default configuration, each simulation scenario provides its own configuration file. The simulation parameters in this file override the default configuration file.
 
 ### How to provide .ini files to a simulation
 Since the C++ interface of the TrafficFluid simulator is already fixed, there was no direct way to provide the
 LFT configuration files to a simulation. Therefore, the current LFT plugin repository uses environment variables to 
 provide these .ini files to the C++ code. 
-<span style="color:red">Warning: The SUMO simulation with the LFT plugin will not start if these variables are not set.</span>
+
+<span style="color:red">Warning: If the following environment variables are not set, the LFT plugin code searches for 
+the default_config.ini and the config.ini in the same folder as the compiled **libLaneFreePlugin.dll**. By default,
+the cmake keeps track and automatically copies the config.ini and default_config.ini to the .dll folder.</span>
 
 The following environment variables are used:
 
 - **DEFAULT_CONFIG_FILE**: 		
   - This environment variable provides the path to the default configuration file. 
   - The file name of the default configuration can be anything. 
-  - The file **src\default_config\default_config.ini** provides the main .ini templete to be used.
-  - Any customized default configuration file must define all the parameters listed in the **src\default_config\default_config.ini**.
+  - The file **src\lft_plugin_config_files\default_config.ini** provides the main .ini templete to be used.
+  - Any customized default configuration file must define all the parameters listed in the **src\lft_plugin_config_files\default_config.ini**.
 
 
 - **CONFIG_FILE**:
   - This environment variable must provide the path to the scenario specific configuration file.
-  - Use the file **src\default_config\default_config.ini** as starting point and change any parameter you want for simulation.
+  - Use the file **src\lft_plugin_config_files\default_config.ini** as starting point and change any parameter you want for simulation.
+  - The repository does not track a separate config.ini file. During project formation via cmake, the default_config.ini
+    file is copied to the build folder. The path of this file is used in the **parallel_run.py** script to start the simulation.
 
 ## A short tutorial on how to run a basic SUMO simulation scenario
 The repository provides a simple ring road example to show how to start a simulation with the LFT plugin. The SUMO files
@@ -64,7 +69,7 @@ See the following steps to start this SUMO example using LFT plugin:
 1. **Compile the C++ code**: 
    - Follow the instructions in the **Installation** section to compile the C++ code and set the env variable to the .dll file.
 2. **Set the envrionment variables for the default and scenario specific config (.ini) files**
-   - Create an environment variable **DEFAULT_CONFIG_FILE** and set its value to the path **...\src\default_config\default_config.ini**
+   - Create an environment variable **DEFAULT_CONFIG_FILE** and set its value to the path **...\src\lft_plugin_config_files\default_config.ini**
    - Create an environment variable **CONFIG_FILE** and set its value to the path of the scenario specific configuration file.
      - An example config.ini for the ring road example is provided. Thus, set the value of **CONFIG_FILE** to the path of the file **...\python_src\SUMO_Runs\example_ring_road\config.ini**.
 3. Open the TrafficFluid (SUMO) simulator by running the file **python_src\SUMO\bin\sumo-gui.exe**.
