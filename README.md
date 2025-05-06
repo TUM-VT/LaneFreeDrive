@@ -68,10 +68,19 @@ See the following steps to start this SUMO example using LFT plugin:
 
 1. **Compile the C++ code**: 
    - Follow the instructions in the **Installation** section to compile the C++ code and set the env variable to the .dll file.
-2. **Set the envrionment variables for the default and scenario specific config (.ini) files**
-   - Create an environment variable **DEFAULT_CONFIG_FILE** and set its value to the path **...\src\lft_plugin_config_files\default_config.ini**
-   - Create an environment variable **CONFIG_FILE** and set its value to the path of the scenario specific configuration file.
-     - An example config.ini for the ring road example is provided. Thus, set the value of **CONFIG_FILE** to the path of the file **...\python_src\SUMO_Runs\example_ring_road\config.ini**.
+2. ** Provide the default_config.ini and config.ini files**:
+   - An example config.ini for the ring road example is provided in the folder **...\python_src\SUMO_Runs\example_ring_road\config.ini**. 
+   - It is possible to provide configuration files to the LFT plugin using one of the two methods:
+     - **Method 1: Set the envrionment variables for .ini variables**
+       - Copy the default_config.ini and config.ini files to the same folder as the compiled .dll file. 
+       - The path of the default_config.ini file is **...\src\lft_plugin_config_files\default_config.ini**.
+       - The path of the config.ini file is **...\python_src\SUMO_Runs\example_ring_road\config.ini**.
+     - **Method 2: Let the code find the default_config.ini and config.ini files in the same folder as the compiled .dll file**
+       - The default_config.ini is already copied to the same folder as the compiled .dll file during the cmake project formation.
+       - Copy and overwrite the config.ini file from **...\python_src\SUMO_Runs\example_ring_road\config.ini** to **src\lft_plugin_config_files** folder.
+       - In visual studio, click "Project -> Configure Cache".
+       - **Note:** After any changes you make to the config.ini, the visual studio will automatically copy the config.ini to the compilation folder.
+
 3. Open the TrafficFluid (SUMO) simulator by running the file **python_src\SUMO\bin\sumo-gui.exe**.
 4. Open the SUMO file **python_src/SUMO_Runs/example_ring_road/ring.sumocfg** in SUMO GUI.
 5. Start the simulation.
