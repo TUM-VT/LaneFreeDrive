@@ -1,6 +1,7 @@
 #pragma once
 #include "AdaptivePotentialLines.h"
 #include <cmath>
+#include <iostream>
 #ifdef __unix__
 #include "LaneFree_linux.h"
 #elif defined(WIN32)
@@ -22,12 +23,13 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
 		PLForceModel = "UNIFORM_ADAPTIVE";
 	}
-	std::set<std::string> validAlgorithms = { "ConstantMargin", "SVAM", "FAM", "NSCM", "NAM", "AM"};
+	std::set<std::string> validAlgorithms = { "ConstantMargin", "SVAM", "FAM", "NSCM", "NAM", "AM", "PythonRL"};
 	if (validAlgorithms.find(AdaptiveAlgorithm) == validAlgorithms.end()) {
-		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM or AM. Using the default value ConstantMargin\n");
+		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM, AM or PythonRL. Using the default value ConstantMargin\n");
 		AdaptiveAlgorithm = "ConstantMargin";
 	}
 	syncfile_name = secParam["SyncFile"];
+	python_margin_filename = secParam["PythonMarginInputFile"];
 }
 
 void AdaptivePotentialLines::update() {
@@ -42,6 +44,26 @@ void AdaptivePotentialLines::update() {
 	for (const auto& [follower, leader] : leader_map_temp) {
 		if (leader != nullptr) {
 			follower_map[leader] = follower;
+		}
+	}
+
+	if (AdaptiveAlgorithm.compare("PythonRL") == 0) {
+		// Update the APL margin from the csv file, set by Python
+		std::ofstream margin_file;
+		std::ifstream file(python_margin_filename);
+		if (file.is_open()) {
+			python_margin_map.clear();
+			std::string line;
+			while (std::getline(file, line)) {
+				auto line_vector = splitString(line, ",");
+				if (line_vector[0].compare("") != 0) {
+					python_margin_map[line_vector[0]] = std::stod(line_vector[1]);
+				}
+			}
+			file.close();
+		}
+		else {
+            std::cout << "Unable to open the python margin sync file " << python_margin_filename << std::endl;
 		}
 	}
 
@@ -153,6 +175,11 @@ double AdaptivePotentialLines::calculateAPLMargin(Car* car) {
 
 	if (AdaptiveAlgorithm.compare("ConstantMargin") == 0) {
 		margin = ConstantMargin;
+		return margin;
+	}
+
+	if (AdaptiveAlgorithm.compare("PythonRL") == 0) {
+		margin = python_margin_map[car->getVehName()];
 		return margin;
 	}
 

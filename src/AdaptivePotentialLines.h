@@ -21,6 +21,8 @@ protected:
 	std::set <Car*> cars_with_modified_pl;
 	std::ofstream sync_file;
 	std::string syncfile_name;
+	std::string python_margin_filename;
+	std::map<std::string, double> python_margin_map;
 
 	void update() override;
 
