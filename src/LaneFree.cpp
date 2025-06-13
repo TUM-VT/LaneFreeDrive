@@ -145,6 +145,21 @@ void insert_vehicles() {
 
 		for (int i = 0; i < vehicle_types.size(); i++){
 			int count = std::stoi(vehicle_counts[i]);
+			std::vector<std::string> lon_positions, lat_positions;
+			// Check if vehicle_types[i] is a key in rand_config
+			if ((rand_config.count(vehicle_types[i] + "_x") != 0) && (rand_config.count(vehicle_types[i] + "_y") != 0)){
+				std::string str = rand_config[vehicle_types[i] + "_x"];
+				lon_positions = { std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
+				str = rand_config[vehicle_types[i] + "_y"];
+				lat_positions = { std::sregex_token_iterator(str.begin(), str.end(), reg, -1), {} };
+				std::cout << "Fixed positions of " << vehicle_types[i] << " are given. Skipping random generation for " << vehicle_types[i] << "." << std::endl;
+				for (int j = 0; j < lon_positions.size(); j++) {
+					std::string veh_name = vehicle_types[i] + "_" + std::to_string(j);
+					insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), std::stod(lon_positions[j]), std::stod(lat_positions[j]), 0, 0, 0, 0);
+				}
+				continue;
+			}
+
 			for (int j = 0; j < count; j++) {
 				std::string veh_name = vehicle_types[i] + "_" + std::to_string(j);
 				double x_val = uni_x(rng);
