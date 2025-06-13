@@ -1,0 +1,28 @@
+<routes>
+
+	<route id="route0" edges="entry1"/>
+    <vType id="lane_free_car_0" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.2" width="1.6"   minGap="0.2" color="yellow"/>
+	<vType id="lane_free_car_1" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.4" width="1.7"  minGap="0.2" color="red"/>
+	<vType id="lane_free_car_2" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.9" width="1.7"  minGap="0.2" color="green"/>
+	<vType id="lane_free_car_3" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.00" width="1.8"  minGap="0.2" color="#733337"/>
+	<vType id="lane_free_car_4" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.00" width="1.8"  minGap="0.2" color="blue"/>
+	
+	<flow id="normal_flow_0" type="lane_free_car_0" begin="0" end="2000" number="200" route="route0" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_1" type="lane_free_car_1" begin="0" end="2000" number="200" route="route0" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_2" type="lane_free_car_2" begin="0" end="2000" number="100" route="route0" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_3" type="lane_free_car_3" begin="0" end="2000" number="100" route="route0" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_5" type="lane_free_car_4" begin="0" end="2000" number="200" route="route0" departSpeed="30" departPos="0" minGap="0.2"/>
+	
+	<route id="route1"  edges="entry2"/>
+	<vType id="lane_free_car_5" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.2" width="1.6"   minGap="0.2" color="yellow"/>
+	<vType id="lane_free_car_6" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.4" width="1.7"  minGap="0.2" color="red"/>
+	<vType id="lane_free_car_7" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.9" width="1.7"  minGap="0.2" color="green"/>
+	<vType id="lane_free_car_8" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.00" width="1.8"  minGap="0.2" color="#733337"/>
+	<vType id="lane_free_car_9" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.00" width="1.8"  minGap="0.2" color="blue"/>
+		 
+	<flow id="normal_flow_6" type="lane_free_car_5" begin="0" end="2000" number="200" route="route1" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_7" type="lane_free_car_6" begin="0" end="2000" number="200" route="route1" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_8" type="lane_free_car_7" begin="0" end="2000" number="100" route="route1" departSpeed="30" departPos="0" minGap="0.2"/>
+	<flow id="normal_flow_9" type="lane_free_car_8" begin="0" end="2000" number="200" route="route1" departSpeed="30" departPos="0" minGap="0.2"/>
+	
+</routes>

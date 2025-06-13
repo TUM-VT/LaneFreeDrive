@@ -1,0 +1,13 @@
+<configuration>
+	<input>
+		<net-file value="crudenworld2_v1.1_odr1.4_lf.net.xml"/>
+		<route-files value="lane_free_route.rou.xml"/>
+		<gui-settings-file value="gui-settings.cfg"/>
+	</input>
+    <processing>
+	<step-method.ballistic value = "true"/>
+	<collision.action value = "none"/>
+	<step-length value = "0.25"/>
+    </processing>
+
+</configuration>
