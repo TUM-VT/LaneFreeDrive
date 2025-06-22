@@ -122,9 +122,10 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 	for (Car* car : front_neighbors) {
 		double delta_x = car->getX() - ego->getX();
 		if (delta_x < FrontDistnce && VSafeVehModels.find(car->getModelName()) != VSafeVehModels.end()) {
-			double lower_car_y = car->getY() - car->getWidth() / 2.0 + 0.1;
-			double upper_car_y = car->getY() + car->getWidth() / 2.0 - 0.1;
-			if ((lower_ego_y < upper_car_y && upper_car_y < upper_ego_y) || (lower_ego_y < lower_car_y && lower_car_y < upper_ego_y)) {
+			double lower_car_y = car->getY() - car->getWidth() / 2.0;
+			double upper_car_y = car->getY() + car->getWidth() / 2.0;
+
+			if (std::max(lower_ego_y, lower_car_y) < std::min(upper_ego_y, upper_car_y)) {
 				leader = car;
 				break;
 			}
