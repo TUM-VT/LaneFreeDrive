@@ -56,6 +56,8 @@ public:
 	double getY() { return y; }
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
+	double getAccX() { return accX; }
+	double getAccY() { return accY; }
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
 	NumericalID getCurrentEdge() { return currentEdge; }
@@ -70,6 +72,8 @@ protected:
 	double length;
 	double speedX;
 	double speedY;
+	double accX = 0;
+	double accY = 0;
 	double x;
 	double y;
 	double desiredSpeed;

@@ -89,6 +89,8 @@ Car::Car(const Car& car) {
 	y = car.y;
 	speedX = car.speedX;
 	speedY = car.speedY;
+	accX = car.accX;
+	accY = car.accY;
 	desiredSpeed = car.desiredSpeed;
 	currentEdge = car.currentEdge;
 	lftstrategy = car.lftstrategy;
@@ -96,6 +98,8 @@ Car::Car(const Car& car) {
 
 std::tuple<double, double> Car::applyAcceleration() {
 	auto [ax, ay] = lftstrategy->calculateAcceleration(this);
+	accX = ax;
+	accY = ay;
 	apply_acceleration(numID, ax, ay);
 	return std::make_tuple(ax, ay);
 }
