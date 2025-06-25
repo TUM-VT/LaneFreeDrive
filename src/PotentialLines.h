@@ -25,6 +25,7 @@ protected:
 	double ReactionTime;
 	double Deccelerate;
 	double Accelerate;
+	double MinSafeGap;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;

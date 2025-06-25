@@ -38,6 +38,7 @@ PotentialLines::PotentialLines(iniMap config) {
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
+	MinSafeGap = stod(secParam["MinSafeGap"]);
 	setAccAndJerkConstraints(secParam);
 
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
@@ -140,8 +141,8 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 	double a = ReactionTime * Deccelerate;
 	double gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
-	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
-	if (gap < 0) {
+	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap));
+	if (gap - MinSafeGap < 0) {
 		vsafe = 0;
 	}
 	return vsafe;
