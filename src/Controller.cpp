@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include <time.h>
 #include <iostream>
@@ -49,6 +48,66 @@ std::vector<string> LFTStrategy::splitString(const string& s, string delimiter) 
 	std::regex reg(delimiter);
 	std::vector<string> split{ std::sregex_token_iterator(s.begin(), s.end(), reg, -1), {} };
 	return split;
+}
+
+std::tuple<double, double> LFTStrategy::applyAccAndJerkConstraints(double ax, double ay, Car* car) {
+
+	// Limit the acceleration values based on the constraints
+	if (acc_jerk_limits.count("longitudinal_acceleration_limits") > 0) {
+		auto [min_lon_acc, max_lon_acc] = acc_jerk_limits["longitudinal_acceleration_limits"];
+		ax = min(max_lon_acc, max(min_lon_acc, ax));
+	}
+
+	if (acc_jerk_limits.count("lateral_acceleration_limits") > 0) {
+		auto [min_lat_acc, max_lat_acc] = acc_jerk_limits["lateral_acceleration_limits"];
+		ay = min(max_lat_acc, max(min_lat_acc, ay));
+	}
+
+	// Limit the jerk values based on the constraints
+	if (acc_jerk_limits.count("longitudinal_jerk_limits") > 0) {
+		auto [min_long_jerk, max_long_jerk] = acc_jerk_limits["longitudinal_jerk_limits"];
+		// Calculate max acceleration possible based on acceleration and time step length
+		double acc_diff = ax - car->getAccX();
+		if (acc_diff > 0) {
+			double possible_acc = car->getAccX() + max_long_jerk * get_time_step_length();
+			ax = min(ax, possible_acc);
+		}
+		else if (acc_diff < 0) {
+			double possible_acc = car->getAccX() + min_long_jerk * get_time_step_length();
+			ax = max(ax, possible_acc);
+		}
+	}
+
+	if (acc_jerk_limits.count("lateral_jerk_limits") > 0) {
+		auto [min_lat_jerk, max_lat_jerk] = acc_jerk_limits["lateral_jerk_limits"];
+		// Calculate max acceleration possible based on acceleration and time step length
+		double acc_diff = ay - car->getAccY();
+		if (acc_diff > 0) {
+			double possible_acc = car->getAccY() + max_lat_jerk * get_time_step_length();
+			ay = min(ay, possible_acc);
+		}
+		else if (acc_diff < 0) {
+			double possible_acc = car->getAccY() + min_lat_jerk * get_time_step_length();
+			ay = max(ay, possible_acc);
+		}
+	}
+
+	return std::make_tuple(ax, ay);
+}
+
+void LFTStrategy::setAccAndJerkConstraints(map<string, string> config) {
+	for (string key: { "lateral_acceleration_limits", "longitudinal_acceleration_limits", "lateral_jerk_limits", "longitudinal_jerk_limits"}) {
+		if (config[key].compare("") != 0) {
+			std::vector<string> limits = splitString(config[key], ",");
+			if (limits.size() == 2) {
+				double min_limit = std::stod(limits[0]);
+				double max_limit = std::stod(limits[1]);
+				acc_jerk_limits[key] = std::make_tuple(min_limit, max_limit);
+			} else {
+				throw std::invalid_argument("Invalid format for " + key + " in config file. Expected format: min,max");
+			}
+		}
+	}
 }
 
 bool LFTStrategy::circular = false;

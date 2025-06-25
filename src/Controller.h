@@ -36,6 +36,9 @@ public:
 protected:
 	std::map<NumericalID, Car*> carsMap;
 	static bool circular;
+	std::map<std::string, std::tuple<double, double>> acc_jerk_limits;
+	std::tuple<double, double> applyAccAndJerkConstraints(double ax, double ay, Car* car);
+	void setAccAndJerkConstraints(std::map<std::string, std::string> config);
 };
 
 class Car {

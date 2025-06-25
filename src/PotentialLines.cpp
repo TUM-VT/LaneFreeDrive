@@ -38,6 +38,7 @@ PotentialLines::PotentialLines(iniMap config) {
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
+	setAccAndJerkConstraints(secParam);
 
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
 	if (vsafe[0].compare("") != 0) {
@@ -101,7 +102,9 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 		fx = std::min(fx, ax_safe);
 	}
 
-	return std::make_tuple(fx, fy);
+	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
+
+	return std::make_tuple(fxC, fyC);
 }
 
 std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours) {
