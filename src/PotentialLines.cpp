@@ -294,8 +294,8 @@ double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 		return ay;
 	}
 
-	double fy = MIN(ay, upper_lim);
-	fy = MAX(fy, lower_lim);
+	double fy = MIN(ay, acc_upper_boundary);
+	fy = MAX(fy, acc_lower_boundary);
 	return fy;
 }
 
