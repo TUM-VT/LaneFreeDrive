@@ -327,7 +327,7 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 			else {
 				if (StripsChangeFile.is_open()) {
 					double time = get_time_step_length() * get_current_time_step();
-					StripsChangeFile << time << "," << ego->getNumId() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
+					StripsChangeFile << time << "," << ego->getVehName() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
 				}
 			}
 		}
