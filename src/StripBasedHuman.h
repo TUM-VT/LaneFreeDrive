@@ -52,6 +52,7 @@ private:
 	double ReactionTime;
 	double Deccelerate;
 	double Accelerate;
+	double MinSafeGap;
 	double StripWidth;
 	double FrontDistance;
 	double LaneChangeThreshold;

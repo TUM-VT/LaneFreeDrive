@@ -36,6 +36,9 @@ public:
 protected:
 	std::map<NumericalID, Car*> carsMap;
 	static bool circular;
+	std::map<std::string, std::tuple<double, double>> acc_jerk_limits;
+	std::tuple<double, double> applyAccAndJerkConstraints(double ax, double ay, Car* car);
+	void setAccAndJerkConstraints(std::map<std::string, std::string> config);
 };
 
 class Car {
@@ -56,6 +59,8 @@ public:
 	double getY() { return y; }
 	double getSpeedX() { return speedX; }
 	double getSpeedY() { return speedY; }
+	double getAccX() { return accX; }
+	double getAccY() { return accY; }
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
 	NumericalID getCurrentEdge() { return currentEdge; }
@@ -70,6 +75,8 @@ protected:
 	double length;
 	double speedX;
 	double speedY;
+	double accX = 0;
+	double accY = 0;
 	double x;
 	double y;
 	double desiredSpeed;

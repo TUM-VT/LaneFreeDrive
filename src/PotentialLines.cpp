@@ -38,6 +38,11 @@ PotentialLines::PotentialLines(iniMap config) {
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
+	MinSafeGap = stod(secParam["MinSafeGap"]);
+	k1_boundary = stod(secParam["k1_boundary"]);
+	k2_boundary = stod(secParam["k2_boundary"]);
+	BoundaryControl = secParam["BoundaryControl"];
+	setAccAndJerkConstraints(secParam);
 
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
 	if (vsafe[0].compare("") != 0) {
@@ -101,7 +106,9 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 		fx = std::min(fx, ax_safe);
 	}
 
-	return std::make_tuple(fx, fy);
+	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
+
+	return std::make_tuple(fxC, fyC);
 }
 
 std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours) {
@@ -122,9 +129,10 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 	for (Car* car : front_neighbors) {
 		double delta_x = car->getX() - ego->getX();
 		if (delta_x < FrontDistnce && VSafeVehModels.find(car->getModelName()) != VSafeVehModels.end()) {
-			double lower_car_y = car->getY() - car->getWidth() / 2.0 + 0.1;
-			double upper_car_y = car->getY() + car->getWidth() / 2.0 - 0.1;
-			if ((lower_ego_y < upper_car_y && upper_car_y < upper_ego_y) || (lower_ego_y < lower_car_y && lower_car_y < upper_ego_y)) {
+			double lower_car_y = car->getY() - car->getWidth() / 2.0;
+			double upper_car_y = car->getY() + car->getWidth() / 2.0;
+
+			if (std::max(lower_ego_y, lower_car_y) < std::min(upper_ego_y, upper_car_y)) {
 				leader = car;
 				break;
 			}
@@ -136,8 +144,8 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 	double a = ReactionTime * Deccelerate;
 	double gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
-	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
-	if (gap < 0) {
+	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap));
+	if (gap - MinSafeGap < 0) {
 		vsafe = 0;
 	}
 	return vsafe;
@@ -263,16 +271,31 @@ double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 	double step = get_time_step_length();
 	double road_width = get_edge_width(ego->getCurrentEdge());
 
-	double upper_diff = road_width - (ego->getY() + ego->getWidth() / 2.0);
-	double speed_to_reach_up = upper_diff / step;
-	double upper_lim = (speed_to_reach_up - ego->getSpeedY()) / step;
+	double acc_upper_boundary, acc_lower_boundary;
 
-	double lower_diff = ego->getY() - ego->getWidth() / 2.0;
-	double speed_to_reach_down = -lower_diff / step;
-	double lower_lim = (speed_to_reach_down - ego->getSpeedY()) / step;
+	if (BoundaryControl.compare("Hard") == 0) {
+		double upper_diff = road_width - (ego->getY() + ego->getWidth() / 2.0);
+		double lower_diff = ego->getY() - ego->getWidth() / 2.0;
+		double speed_to_reach_up = upper_diff / step;
+		acc_upper_boundary = (speed_to_reach_up - ego->getSpeedY()) / step;
+		double speed_to_reach_down = -lower_diff / step;
+		acc_lower_boundary = (speed_to_reach_down - ego->getSpeedY()) / step;
+	}
+	else if (BoundaryControl.compare("Proportional") == 0) {
+		double upper_boundary = road_width - ego->getWidth() / 2.0;
+		acc_upper_boundary = k1_boundary * (upper_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
 
-	double fy = MIN(ay, upper_lim);
-	fy = MAX(fy, lower_lim);
+		double lower_boundary = ego->getWidth() / 2.0;
+		acc_lower_boundary = k1_boundary * (lower_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
+
+	}
+	else {
+		std::cout << "Invalid BoundaryControl parameter " << BoundaryControl << " given. Boundary control not applied";
+		return ay;
+	}
+
+	double fy = MIN(ay, acc_upper_boundary);
+	fy = MAX(fy, acc_lower_boundary);
 	return fy;
 }
 

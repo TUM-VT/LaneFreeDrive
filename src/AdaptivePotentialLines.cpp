@@ -117,7 +117,9 @@ std::tuple<double, double>  AdaptivePotentialLines::calculateAcceleration(Car* e
 		fx = std::min(fx, ax_safe);
 	}
 
-	return std::make_tuple(fx, fy);
+	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
+
+	return std::make_tuple(fxC, fyC);
 }
 
 std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {

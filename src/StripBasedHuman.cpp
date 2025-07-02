@@ -90,6 +90,7 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
+	MinSafeGap = stod(secParam["MinSafeGap"]);
 	Lambda = stod(secParam["Lambda"]);
 	LaneChangeThreshold = stod(secParam["LaneChangeThreshold"]);
 	string file_path = secParam["StripsChangeFile"];
@@ -120,7 +121,7 @@ double StripBasedHuman::calculateSafeVelocity(Car* ego, Car* leader, double gap)
 		}
 	}
 	double a = reaction_time * Deccelerate;
-	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * gap);
+	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap-MinSafeGap));
 	return vsafe;
 }
 
@@ -308,8 +309,8 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	double ay = - ego->getSpeedY() / time_step;
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
-		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx) + ego->getWidth() / 2;
-		double diff_y = new_y - ego->getY();
+		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx);
+		double diff_y = new_y - (ego->getY() - ego->getWidth() / 2);
 
 		double req_speed_y = diff_y / time_step;
 		double speed_diff = req_speed_y - ego->getSpeedY();
@@ -326,7 +327,7 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 			else {
 				if (StripsChangeFile.is_open()) {
 					double time = get_time_step_length() * get_current_time_step();
-					StripsChangeFile << time << "," << ego->getNumId() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
+					StripsChangeFile << time << "," << ego->getVehName() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
 				}
 			}
 		}
