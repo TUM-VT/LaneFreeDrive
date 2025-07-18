@@ -9,7 +9,6 @@ class AdaptivePotentialLines : public PotentialLines {
 public:
 
 	AdaptivePotentialLines(iniMap config);
-	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 
 protected:
 
@@ -28,9 +27,8 @@ protected:
 
 	void finish_time_step() override;
 
+	double calculatePLForce(Car* ego, double lower_bound, double upper_bound) override;
 	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b) override;
-
-	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
 
 	double calculateAPLMargin(Car* car);
 

@@ -58,6 +58,8 @@ protected:
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
 
+	virtual double calculatePLForce(Car* ego, double lower_bound, double upper_bound);
+
 	double calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 
 	double calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);

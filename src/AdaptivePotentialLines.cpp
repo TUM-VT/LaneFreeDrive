@@ -92,36 +92,6 @@ void AdaptivePotentialLines::finish_time_step() {
 	}
 }
 
-std::tuple<double, double>  AdaptivePotentialLines::calculateAcceleration(Car* ego) {
-	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
-	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
-	Car* leader = leader_map[ego];
-
-	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
-	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
-	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl;
-	
-	fy_pl = calculatePLForceUniformAdaptive(ego, LowerLong, UpperLong);
-
-	// Calculate combined force
-	double fx{ 0 }, fy{ 0 };
-	fx = ax_desired + fx_nudge + fx_repluse;
-	fy = ay_desired + fy_nudge + fy_repluse + fy_pl;
-	// Consider the boundary control
-	fy = controlRoadBoundary(ego, fy);
-
-	// Limit the x-axis acceleration according to safe velocity
-	if (VSafeVehModels.size() > 0){
-		double ax_safe = calculateSafeAcc(ego, leader);
-		fx = std::min(fx, ax_safe);
-	}
-
-	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
-
-	return std::make_tuple(fxC, fyC);
-}
-
 std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	double neighbour_x = neighbour->getCircularX();
 	// double rel_dist_x = fabs(ego->getX() - neighbour_x);
@@ -299,7 +269,7 @@ std::map<double, double> AdaptivePotentialLines::calculateAvailableLateralFromOc
 	return new_lats;
 }
 
-double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound) {
+double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
 	double car_x = ego->getX();
 	double pl_force = std::nan("");
 	for (const auto& [range, lat_info] : human_free_space) {
