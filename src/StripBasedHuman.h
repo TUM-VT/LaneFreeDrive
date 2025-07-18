@@ -51,6 +51,7 @@ public:
 private:
 	double ReactionTime;
 	double Deccelerate;
+	double MaxBrakeDeceleration;
 	double Accelerate;
 	double MinSafeGap;
 	double StripWidth;

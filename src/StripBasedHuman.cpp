@@ -89,6 +89,7 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
+	MaxBrakeDeceleration = stod(secParam["MaxBrakeDeceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
 	MinSafeGap = stod(secParam["MinSafeGap"]);
 	Lambda = stod(secParam["Lambda"]);
@@ -295,6 +296,14 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	double ax = 0;
 	if (diff_vel_x < 0) {
 		ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
+		// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
+		if (leader != nullptr) {
+			double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
+			double gap = leader->getX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+			if (gap < brake_distance) {
+				ax = -std::min({ std::abs(diff_vel_x / time_step), MaxBrakeDeceleration });
+			}
+		}
 	}
 	else {
 		ax = std::min(diff_vel_x / time_step, Accelerate);
