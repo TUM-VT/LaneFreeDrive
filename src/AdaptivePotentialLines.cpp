@@ -321,16 +321,14 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 			double rel_line = (available_space / areas) * co;
 
 			double space_count = 0;
+			double passed_space = 0.0;
 			for (const auto& [y1, y2] : possible_lats) {
 				double pl_space = y2 - y1;
 				space_count += pl_space;
 				if (rel_line < space_count) {
-					double target_line = y1 + rel_line;
+					double target_line = y1 + rel_line - passed_space;
 					Car* leader = leader_map[ego];
 					double factor = verordnungsindex;
-					if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
-						double factor = verordnungsindex;
-					}
 					assigned_pl[ego] = target_line;
 					pl_force = factor * (target_line - ego->getY());
 					if (sync_file.is_open()) {
@@ -339,6 +337,7 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 					}
 					break;
 				}
+				passed_space += pl_space;
 			}
 			break;
 		}
