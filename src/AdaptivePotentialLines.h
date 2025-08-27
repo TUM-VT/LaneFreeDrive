@@ -14,6 +14,8 @@ protected:
 
 	double ConstantMargin;
 	double AdaptiveFollowerDistance;
+	double apl_corridor_force_index;
+	std::map<Car*, bool> car_in_apl;
 	std::string AdaptiveAlgorithm;
 	std::map <Car*, Car*> follower_map;
 	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;

@@ -11,6 +11,18 @@
 using std::map;
 using std::string;
 
+double check_parameter_in_pl(iniMap config, string pl_param, string apl_param) {
+	map<string, string> secParam = config["Adaptive Potential Lines Parameters"];
+	string apl = secParam[apl_param];
+	if (apl.compare("") == 0) {
+		std::cout << apl_param << " not set in the configuration file. Using " << pl_param << " from PotentialLines" << std::endl;
+		return stod(config["Potential Lines Parameters"][pl_param]);
+	}
+	else {
+		return stod(apl);
+	}
+}
+
 AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(config) {
 	printf("Setting parameters for Adaptive Potential Lines strategy\n");
 
@@ -18,6 +30,8 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 	AdaptiveAlgorithm = secParam["AdaptiveAlgorithm"];
 	ConstantMargin = stod(secParam["ConstantMargin"]);
 	AdaptiveFollowerDistance = stod(secParam["AdaptiveFollowerDistance"]);
+	apl_corridor_force_index = check_parameter_in_pl(config, "pl_force_index", "APL_pl_force_index");
+
 	PLForceModel = secParam["PLForceModel"];
 	if (PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
 		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
@@ -296,13 +310,13 @@ double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, do
 				if (rel_line < space_count) {
 					double target_line = y1 + rel_line - passed_space;
 					Car* leader = leader_map[ego];
-					double factor = verordnungsindex;
 					assigned_pl[ego] = target_line;
-					pl_force = factor * (target_line - ego->getY());
+					pl_force = apl_corridor_force_index * (target_line - ego->getY());
 					if (sync_file.is_open()) {
 						sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "Y" << ","
 							<< x1 << "," << x2 << "," << target_line << "\n";
 					}
+					car_in_apl[ego] = true;
 					break;
 				}
 				passed_space += pl_space;
@@ -315,6 +329,7 @@ double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, do
 			sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "N" << ",,,\n";
 		}
 		pl_force = calculatePLForceUniform(ego, lower_bound, upper_bound);
+		car_in_apl[ego] = false;
 	}
 	return pl_force;
 }
