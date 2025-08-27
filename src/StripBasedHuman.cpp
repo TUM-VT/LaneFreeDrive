@@ -93,6 +93,7 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	Accelerate = stod(secParam["Acceleration"]);
 	MinSafeGap = stod(secParam["MinSafeGap"]);
 	Lambda = stod(secParam["Lambda"]);
+	numStripsConsidered = -std::log(0.01) / Lambda;
 	LaneChangeThreshold = stod(secParam["LaneChangeThreshold"]);
 	string file_path = secParam["StripsChangeFile"];
 	if (file_path.compare("") != 0) {
@@ -176,10 +177,13 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::unordered_map<int,
 	if (car != nullptr) {
 		vsafe_current = vsafe;
 	}
+
+	int left_most = std::min(main_inx + (int)numStripsConsidered, total_strips - 1);
+	int right_most = std::max(main_inx - (int)numStripsConsidered, 0);
 	
 	double right = 0;
 	double left = 0;
-	for (int inx = 0; inx < total_strips; inx++) {
+	for (int inx = right_most; inx < left_most+1; inx++) {
 		double vsafe_neighbour = vel_max;
 		auto [vsafe, car] = safeVelMap[inx];
 		if (car != nullptr) {
