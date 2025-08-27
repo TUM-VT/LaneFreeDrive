@@ -95,16 +95,10 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
 	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
 
+	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl;
-	if (PLForceModel.compare("UNIFORM") == 0) {
-		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
-	}
-	else {
-		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
-	}
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
@@ -254,6 +248,17 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	double ax_desired = Kp1 * (control_speed - car->getSpeedX());
 	double ay_desired = -Kp2 * car->getSpeedY();
 	return std::make_tuple(ax_desired, ay_desired);
+}
+
+double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
+	double fy_pl{ 0 };
+	if (PLForceModel.compare("UNIFORM") == 0) {
+		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
+	}
+	else {
+		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
+	}
+	return fy_pl;
 }
 
 double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound) {
