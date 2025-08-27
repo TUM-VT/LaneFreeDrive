@@ -1,0 +1,21 @@
+<routes>
+    
+   
+	<vType id="AV_1" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.2" width="1.6"  minGap="0.2" color="yellow"/>
+	<vType id="AV_2" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.4" width="1.7"  minGap="0.2" color="yellow"/>
+	<vType id="AV_3" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.9" width="1.7"  minGap="0.2" color="yellow"/>
+	<vType id="AV_4" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.25" width="1.8"  minGap="0.2" color="yellow"/>
+	<vType id="AV_5" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.55" width="1.82"  minGap="0.2" color="yellow"/>
+	<vType id="AV_6" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.15" width="1.84"  minGap="0.2" color="yellow"/>
+	<vType id="AV_7" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.2" width="1.88"  minGap="0.2" color="yellow"/>
+	
+	<vType id="Human_1" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.2" width="1.6"  minGap="0.2" color="red"/>
+	<vType id="Human_2" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.4" width="1.7"  minGap="0.2" color="red"/>
+	<vType id="Human_3" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="3.9" width="1.7"  minGap="0.2" color="red"/>
+	<vType id="Human_4" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.25" width="1.8"  minGap="0.2" color="red"/>
+	<vType id="Human_5" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="4.55" width="1.82"  minGap="0.2" color="red"/>
+	<vType id="Human_6" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.15" width="1.84"  minGap="0.2" color="red"/>
+	<vType id="Human_7" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.2" width="1.88"  minGap="0.2" color="red"/>
+	
+    <route id="route0"  edges="road_stretch"/>
+</routes>

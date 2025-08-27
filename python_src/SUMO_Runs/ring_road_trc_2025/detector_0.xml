@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 8/27/2025 4:16:03 PM by Eclipse SUMO GUI Version TrafficFluid-Sim Extension v1.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="D:\SUMO%20Work\Human%20in%20LFT\python_src\SUMO_Runs\ring_road_single_edge\ring.net.xml"/>
+        <route-files value="D:\SUMO%20Work\Human%20in%20LFT\python_src\SUMO_Runs\ring_road_single_edge\ring.rou.xml"/>
+        <additional-files value="D:\SUMO%20Work\Human%20in%20LFT\python_src\SUMO_Runs\ring_road_single_edge\detector.add.xml"/>
+    </input>
+
+    <time>
+        <step-length value="0.25"/>
+    </time>
+
+    <processing>
+        <step-method.ballistic value="true"/>
+        <collision.action value="none"/>
+    </processing>
+
+    <gui_only>
+        <gui-settings-file value="D:\SUMO%20Work\Human%20in%20LFT\python_src\SUMO_Runs\ring_road_single_edge\gui-settings.cfg"/>
+        <tracker-interval value="0.25"/>
+    </gui_only>
+
+</configuration>
+-->
+
+<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
+    <interval begin="0.00" end="30.75" id="detector_0" nVehContrib="21" flow="2458.54" occupancy="196.65" speed="4.36" harmonicMeanSpeed="2.78" length="4.27" nVehEntered="33"/>
+</detector>
