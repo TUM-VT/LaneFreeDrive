@@ -155,7 +155,11 @@ void insert_vehicles() {
 				std::cout << "Fixed positions of " << vehicle_types[i] << " are given. Skipping random generation for " << vehicle_types[i] << "." << std::endl;
 				for (int j = 0; j < lon_positions.size(); j++) {
 					std::string veh_name = vehicle_types[i] + "_" + std::to_string(j);
-					insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), std::stod(lon_positions[j]), std::stod(lat_positions[j]), 0, 0, 0, 0);
+					#ifdef __unix__
+						insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), std::stod(lon_positions[j]), std::stod(lat_positions[j]), 0, 0);
+					#elif defined(WIN32)
+						insert_new_vehicle((char*)veh_name.c_str(), (char*)route.c_str(), (char*)vehicle_types[i].c_str(), std::stod(lon_positions[j]), std::stod(lat_positions[j]), 0, 0, 0, 0);
+					#endif
 				}
 				continue;
 			}
