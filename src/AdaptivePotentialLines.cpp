@@ -32,11 +32,6 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 	AdaptiveFollowerDistance = stod(secParam["AdaptiveFollowerDistance"]);
 	apl_corridor_force_index = check_parameter_in_pl(config, "pl_force_index", "APL_pl_force_index");
 
-	PLForceModel = secParam["PLForceModel"];
-	if (PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
-		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
-		PLForceModel = "UNIFORM_ADAPTIVE";
-	}
 	std::set<std::string> validAlgorithms = { "ConstantMargin", "SVAM", "FAM", "NSCM", "NAM", "AM", "PythonRL"};
 	if (validAlgorithms.find(AdaptiveAlgorithm) == validAlgorithms.end()) {
 		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM, AM or PythonRL. Using the default value ConstantMargin\n");
