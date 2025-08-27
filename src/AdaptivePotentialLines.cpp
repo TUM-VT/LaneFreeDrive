@@ -94,9 +94,9 @@ void AdaptivePotentialLines::finish_time_step() {
 
 std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	double neighbour_x = neighbour->getCircularX();
-	// double rel_dist_x = fabs(ego->getX() - neighbour_x);
-	double dneigh = neighbour_x - wx1 * (ego->getSpeedX() - neighbour->getSpeedX()) / 2.0;
-	double rel_dist_x = fabs(ego->getX() - dneigh);
+	double rel_dist_x = fabs(ego->getX() - neighbour_x);
+	//double dneigh = neighbour_x - wx1 * (ego->getSpeedX() - neighbour->getSpeedX()) / 2.0;
+	//double rel_dist_x = fabs(ego->getX() - dneigh);
 	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
 
 	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
