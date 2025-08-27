@@ -17,7 +17,7 @@ protected:
 
 	double FrontDistnce;
 	double BackDistance;
-	double ForceIndex, LowerLong, UpperLong;
+	double ForceIndex, LowerLong, UpperLong, DesireVelocityFI;
 	double Li, Wi, wx1, wx2, wy, verordnungsindex;
 	double Kp1, Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;

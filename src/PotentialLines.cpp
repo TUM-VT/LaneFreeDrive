@@ -22,10 +22,10 @@ PotentialLines::PotentialLines(iniMap config) {
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
+	DesireVelocityFI = stod(secParam["DesireVelocityForceIndex"]);
 	LowerLong = stod(secParam["LowerLong"]);
 	UpperLong = stod(secParam["UpperLong"]);
 	wx1 = stod(secParam["wx1"]);
-	wx2 = stod(secParam["wx2"]);
 	wy = stod(secParam["wy"]);
 	n = stoi(secParam["n"]);
 	p = stoi(secParam["p"]);
@@ -217,7 +217,10 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
 	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
 
-	double f = ForceIndex / (pow((item1 + item2), q) + 1);
+	double desire_ego = (ego->getDesiredSpeed() - ego->getSpeedX() ) / (ego->getDesiredSpeed());
+	double desire_neighbour = (neighbour->getDesiredSpeed() - neighbour->getSpeedX()) / (neighbour->getDesiredSpeed());
+	double desire_factor = DesireVelocityFI * (desire_neighbour - desire_ego);
+	double f = (ForceIndex + desire_factor) / (pow((item1 + item2), q) + 1);
 	double fx{ 0 }, fy{ 0 };
 	if (f > 0.001) {
 		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
