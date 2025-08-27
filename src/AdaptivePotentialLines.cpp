@@ -106,36 +106,6 @@ void AdaptivePotentialLines::finish_time_step() {
 	}
 }
 
-std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
-	double neighbour_x = neighbour->getCircularX();
-	double rel_dist_x = fabs(ego->getX() - neighbour_x);
-	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
-
-	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
-	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
-
-	double f = ForceIndex / (pow((item1 + item2), q) + 1);
-	double fx{ 0 }, fy{ 0 };
-	if (f > 0.001) {
-		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
-		fx = f * cos(theta);
-		fy = f * sin(theta);
-
-		double fx_sign = (ego->getX() < neighbour_x) ? -1 : 1;
-		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
-
-		double force_index = (ego->getX() < neighbour_x) ? repulse_index : nudge_index;
-		if (modelParams.find(neighbour->getModelName()) != modelParams.end()) {
-			auto param = modelParams[neighbour->getModelName()];
-			force_index = (ego->getX() < neighbour_x) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
-		}
-
-		fx = force_index * fx_sign * fabs(fx);
-		fy = force_index * fy_sign * fabs(fy);
-	}
-	return std::make_tuple(fx, fy);
-}
-
 double AdaptivePotentialLines::calculateSurroundingSpeed(Car* car) {
 	double avg_speed{ 0 }, count{ 0 };
 	double y1 = car->getY() - car->getWidth() / 2.0;

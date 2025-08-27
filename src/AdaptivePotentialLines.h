@@ -30,7 +30,6 @@ protected:
 	void finish_time_step() override;
 
 	double calculatePLForce(Car* ego, double lower_bound, double upper_bound) override;
-	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b) override;
 
 	double calculateAPLMargin(Car* car);
 
