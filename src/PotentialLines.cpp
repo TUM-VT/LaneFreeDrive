@@ -4,6 +4,8 @@
 #elif defined(WIN32)
 #include <LaneFree.h>
 #endif
+#include <iostream>
+#include<iomanip>
 
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))
@@ -65,6 +67,18 @@ PotentialLines::PotentialLines(iniMap config) {
 	if (PLForceModel.compare("CDF") == 0) {
 		cdf_map = calculate_cdf_vector(MINDesiredSpeed, MAXDesiredSpeed);
 	}
+
+	string ttc_file_string = secParam["ttcFile"];
+	if (ttc_file_string.compare("") != 0) {
+		ttc_file.open(ttc_file_string);
+		ttc_file << "Time,Vehicle,Leader,gap,speed_x,leader_speed_x,TTC\n";
+	}
+}
+
+void PotentialLines::finalize_simulation() {
+	if (ttc_file.is_open()) {
+		ttc_file.close();
+	}
 }
 
 void PotentialLines::update() {
@@ -104,6 +118,18 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 		Car* leader = leader_map[ego];
 		double ax_safe = calculateSafeAcc(ego, leader);
 		fx = std::min(fx, ax_safe);
+
+		if (ttc_file.is_open()) {
+			double sim_time = get_current_time_step() * get_time_step_length();
+			if (leader != nullptr) {
+				double relative_speed = ego->getSpeedX() - leader->getSpeedX();
+				if (relative_speed > 0) {
+					double lead_gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+					double TTC = lead_gap / relative_speed;
+					ttc_file << sim_time << "," << ego->getVehName() << "," << leader->getVehName() << std::fixed << std::setprecision(2) << "," << lead_gap << "," << ego->getSpeedX() << "," << leader->getSpeedX() << "," << TTC << std::endl;
+				}
+			}
+		}
 	}
 
 	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);

@@ -2,6 +2,7 @@
 #include "Controller.h"
 #include <set>
 #include <cmath>
+#include <fstream>
 
 
 class PotentialLines : public LFTStrategy {
@@ -34,8 +35,11 @@ protected:
 	std::map<int, double> cdf_map;
 	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
+	std::ofstream ttc_file;
 
 	void update() override;
+
+	void finalize_simulation() override;
 
 	std::map <Car*, Car*> leader_map;
 
