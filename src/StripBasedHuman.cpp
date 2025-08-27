@@ -141,9 +141,9 @@ std::unordered_map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVeloc
 	}
 
 	for (Car* car : front_cars) {
-		StripInfo* info = &strip->getVehicleStripInfo(carsMap[car->getNumId()]);
-		int car_lw = info->mainInx;
-		int car_up = car_lw + info->numOccupied - 1;
+		StripInfo info = strip->getVehicleStripInfo(carsMap[car->getNumId()]);
+		int car_lw = info.mainInx - 2;
+		int car_up = car_lw + info.numOccupied - 1 + 2;
 
 		int overlap_lower = std::max(car_lw - numocc - 1, 0);
 		int overlap_upper = std::min(car_up + 1, (int)indices.size() - 1);
