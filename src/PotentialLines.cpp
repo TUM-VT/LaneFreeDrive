@@ -4,6 +4,8 @@
 #elif defined(WIN32)
 #include <LaneFree.h>
 #endif
+#include <iostream>
+#include<iomanip>
 
 #define SAMPLE_UNIFORM(min, max) ((double)min + ((double)random()/RAND_MAX)*(max - min))
 #define MAX(a, b) (((a) > (b))?(a):(b))
@@ -20,10 +22,10 @@ PotentialLines::PotentialLines(iniMap config) {
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
+	DesireVelocityFI = stod(secParam["DesireVelocityForceIndex"]);
 	LowerLong = stod(secParam["LowerLong"]);
 	UpperLong = stod(secParam["UpperLong"]);
 	wx1 = stod(secParam["wx1"]);
-	wx2 = stod(secParam["wx2"]);
 	wy = stod(secParam["wy"]);
 	n = stoi(secParam["n"]);
 	p = stoi(secParam["p"]);
@@ -65,6 +67,18 @@ PotentialLines::PotentialLines(iniMap config) {
 	if (PLForceModel.compare("CDF") == 0) {
 		cdf_map = calculate_cdf_vector(MINDesiredSpeed, MAXDesiredSpeed);
 	}
+
+	string ttc_file_string = secParam["ttcFile"];
+	if (ttc_file_string.compare("") != 0) {
+		ttc_file.open(ttc_file_string);
+		ttc_file << "Time,Vehicle,Leader,gap,speed_x,leader_speed_x,TTC\n";
+	}
+}
+
+void PotentialLines::finalize_simulation() {
+	if (ttc_file.is_open()) {
+		ttc_file.close();
+	}
 }
 
 void PotentialLines::update() {
@@ -81,16 +95,10 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
 	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
 
+	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl;
-	if (PLForceModel.compare("UNIFORM") == 0) {
-		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
-	}
-	else {
-		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
-	}
 
 	// Calculate combined force
 	double fx{ 0 }, fy{ 0 };
@@ -104,6 +112,18 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 		Car* leader = leader_map[ego];
 		double ax_safe = calculateSafeAcc(ego, leader);
 		fx = std::min(fx, ax_safe);
+
+		if (ttc_file.is_open()) {
+			double sim_time = get_current_time_step() * get_time_step_length();
+			if (leader != nullptr) {
+				double relative_speed = ego->getSpeedX() - leader->getSpeedX();
+				if (relative_speed > 0) {
+					double lead_gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+					double TTC = lead_gap / relative_speed;
+					ttc_file << sim_time << "," << ego->getVehName() << "," << leader->getVehName() << std::fixed << std::setprecision(2) << "," << lead_gap << "," << ego->getSpeedX() << "," << leader->getSpeedX() << "," << TTC << std::endl;
+				}
+			}
+		}
 	}
 
 	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
@@ -179,13 +199,9 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 		w = std::stod(param["Wi"]);
 	}
 
-	lon_axis = li * (ego->getLength() + neighbour->getLength())
-		+ wx1 * (ego->getSpeedX() + neighbour->getSpeedX())
-		+ wx2 * fabs(ego->getSpeedX() - neighbour->getSpeedX());
-	double wi = w * ego->getWidth() + w * neighbour->getWidth();
-	// double item0 = (ego->getY() - neighbour->getY()) / (neighbour->getSpeedY() - ego->getSpeedY() + 0.0001);
-	// lat_axis = wi + wy * (tanh(item0) + sqrt(pow(tanh(item0), 2) + 0.0001));
+	lon_axis = li * (ego->getLength() + neighbour->getLength()) + wx1 * (ego->getSpeedX() + neighbour->getSpeedX());
 
+	double wi = w * ego->getWidth() + w * neighbour->getWidth();
 	double t1 = neighbour->getY() - ego->getY();
 	double t2 = ego->getSpeedY() - neighbour->getSpeedY();
 	lat_axis = wi + wy * (tanh(t1) * t2 + sqrt(pow(tanh(t1) * t2, 2) + 0.0001));
@@ -195,15 +211,16 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	double neighbour_x = neighbour->getCircularX();
-	// double rel_dist_x = fabs(ego->getX() - neighbour_x);
-	double dneigh = neighbour_x - wx1 * (ego->getSpeedX() - neighbour->getSpeedX()) / 2.0;
-	double rel_dist_x = fabs(ego->getX() - dneigh);
+	double rel_dist_x = fabs(ego->getX() - neighbour_x);
 	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
 
 	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
 	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
 
-	double f = ForceIndex / (pow((item1 + item2), q) + 1);
+	double desire_ego = (ego->getDesiredSpeed() - ego->getSpeedX() ) / (ego->getDesiredSpeed());
+	double desire_neighbour = (neighbour->getDesiredSpeed() - neighbour->getSpeedX()) / (neighbour->getDesiredSpeed());
+	double desire_factor = DesireVelocityFI * (desire_neighbour - desire_ego);
+	double f = (ForceIndex + desire_factor) / (pow((item1 + item2), q) + 1);
 	double fx{ 0 }, fy{ 0 };
 	if (f > 0.001) {
 		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
@@ -234,6 +251,17 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	double ax_desired = Kp1 * (control_speed - car->getSpeedX());
 	double ay_desired = -Kp2 * car->getSpeedY();
 	return std::make_tuple(ax_desired, ay_desired);
+}
+
+double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
+	double fy_pl{ 0 };
+	if (PLForceModel.compare("UNIFORM") == 0) {
+		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
+	}
+	else {
+		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
+	}
+	return fy_pl;
 }
 
 double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound) {

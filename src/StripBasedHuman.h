@@ -51,12 +51,14 @@ public:
 private:
 	double ReactionTime;
 	double Deccelerate;
+	double MaxBrakeDeceleration;
 	double Accelerate;
 	double MinSafeGap;
 	double StripWidth;
 	double FrontDistance;
 	double LaneChangeThreshold;
 	double Lambda;
+	double numStripsConsidered;
 	std::ofstream StripsChangeFile;
 	std::map<Car*, StripInfo> occupancyMap;
 	std::map<Car*, std::vector<double>> driverMemory;

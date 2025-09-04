@@ -9,12 +9,13 @@ class AdaptivePotentialLines : public PotentialLines {
 public:
 
 	AdaptivePotentialLines(iniMap config);
-	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 
 protected:
 
 	double ConstantMargin;
 	double AdaptiveFollowerDistance;
+	double apl_corridor_force_index;
+	std::map<Car*, bool> car_in_apl;
 	std::string AdaptiveAlgorithm;
 	std::map <Car*, Car*> follower_map;
 	std::map <std::tuple<double, double>, std::map<double, double>> human_free_space;
@@ -28,9 +29,7 @@ protected:
 
 	void finish_time_step() override;
 
-	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b) override;
-
-	double calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound);
+	double calculatePLForce(Car* ego, double lower_bound, double upper_bound) override;
 
 	double calculateAPLMargin(Car* car);
 

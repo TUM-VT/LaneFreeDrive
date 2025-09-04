@@ -89,9 +89,11 @@ StripBasedHuman::StripBasedHuman(iniMap config) {
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
+	MaxBrakeDeceleration = stod(secParam["MaxBrakeDeceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
 	MinSafeGap = stod(secParam["MinSafeGap"]);
 	Lambda = stod(secParam["Lambda"]);
+	numStripsConsidered = -std::log(0.01) / Lambda;
 	LaneChangeThreshold = stod(secParam["LaneChangeThreshold"]);
 	string file_path = secParam["StripsChangeFile"];
 	if (file_path.compare("") != 0) {
@@ -139,9 +141,9 @@ std::unordered_map<int, tuple<double, Car*>> StripBasedHuman::calculateSafeVeloc
 	}
 
 	for (Car* car : front_cars) {
-		StripInfo* info = &strip->getVehicleStripInfo(carsMap[car->getNumId()]);
-		int car_lw = info->mainInx;
-		int car_up = car_lw + info->numOccupied - 1;
+		StripInfo info = strip->getVehicleStripInfo(carsMap[car->getNumId()]);
+		int car_lw = info.mainInx - 2;
+		int car_up = car_lw + info.numOccupied - 1 + 2;
 
 		int overlap_lower = std::max(car_lw - numocc - 1, 0);
 		int overlap_upper = std::min(car_up + 1, (int)indices.size() - 1);
@@ -175,10 +177,13 @@ void StripBasedHuman::updateStripChangeBenefit(Car* ego, std::unordered_map<int,
 	if (car != nullptr) {
 		vsafe_current = vsafe;
 	}
+
+	int left_most = std::min(main_inx + (int)numStripsConsidered, total_strips - 1);
+	int right_most = std::max(main_inx - (int)numStripsConsidered, 0);
 	
 	double right = 0;
 	double left = 0;
-	for (int inx = 0; inx < total_strips; inx++) {
+	for (int inx = right_most; inx < left_most+1; inx++) {
 		double vsafe_neighbour = vel_max;
 		auto [vsafe, car] = safeVelMap[inx];
 		if (car != nullptr) {
@@ -295,6 +300,14 @@ tuple<double, double> StripBasedHuman::calculateAcceleration(Car* ego) {
 	double ax = 0;
 	if (diff_vel_x < 0) {
 		ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
+		// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
+		if (leader != nullptr) {
+			double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
+			double gap = leader->getX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+			if (gap < brake_distance) {
+				ax = -std::min({ std::abs(diff_vel_x / time_step), MaxBrakeDeceleration });
+			}
+		}
 	}
 	else {
 		ax = std::min(diff_vel_x / time_step, Accelerate);

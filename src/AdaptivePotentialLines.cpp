@@ -11,6 +11,18 @@
 using std::map;
 using std::string;
 
+double check_parameter_in_pl(iniMap config, string pl_param, string apl_param) {
+	map<string, string> secParam = config["Adaptive Potential Lines Parameters"];
+	string apl = secParam[apl_param];
+	if (apl.compare("") == 0) {
+		std::cout << apl_param << " not set in the configuration file. Using " << pl_param << " from PotentialLines" << std::endl;
+		return stod(config["Potential Lines Parameters"][pl_param]);
+	}
+	else {
+		return stod(apl);
+	}
+}
+
 AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(config) {
 	printf("Setting parameters for Adaptive Potential Lines strategy\n");
 
@@ -18,11 +30,8 @@ AdaptivePotentialLines::AdaptivePotentialLines(iniMap config): PotentialLines(co
 	AdaptiveAlgorithm = secParam["AdaptiveAlgorithm"];
 	ConstantMargin = stod(secParam["ConstantMargin"]);
 	AdaptiveFollowerDistance = stod(secParam["AdaptiveFollowerDistance"]);
-	PLForceModel = secParam["PLForceModel"];
-	if (PLForceModel.compare("UNIFORM_ADAPTIVE") != 0) {
-		printf("Invalid PLForceModel for Adaptive Potential Lines. Simulation will use default UNIFORM_ADAPTIVE model\n");
-		PLForceModel = "UNIFORM_ADAPTIVE";
-	}
+	apl_corridor_force_index = check_parameter_in_pl(config, "pl_force_index", "APL_pl_force_index");
+
 	std::set<std::string> validAlgorithms = { "ConstantMargin", "SVAM", "FAM", "NSCM", "NAM", "AM", "PythonRL"};
 	if (validAlgorithms.find(AdaptiveAlgorithm) == validAlgorithms.end()) {
 		printf("The value of AdaptiveAlgorithm can only be ConstantMargin, SVAM, FAM, NSCM, NAM, AM or PythonRL. Using the default value ConstantMargin\n");
@@ -90,68 +99,6 @@ void AdaptivePotentialLines::finish_time_step() {
 	if (sync_file.is_open()) {
 		sync_file.close();
 	}
-}
-
-std::tuple<double, double>  AdaptivePotentialLines::calculateAcceleration(Car* ego) {
-	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
-	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
-	Car* leader = leader_map[ego];
-
-	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
-	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
-	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
-	double fy_pl;
-	
-	fy_pl = calculatePLForceUniformAdaptive(ego, LowerLong, UpperLong);
-
-	// Calculate combined force
-	double fx{ 0 }, fy{ 0 };
-	fx = ax_desired + fx_nudge + fx_repluse;
-	fy = ay_desired + fy_nudge + fy_repluse + fy_pl;
-	// Consider the boundary control
-	fy = controlRoadBoundary(ego, fy);
-
-	// Limit the x-axis acceleration according to safe velocity
-	if (VSafeVehModels.size() > 0){
-		double ax_safe = calculateSafeAcc(ego, leader);
-		fx = std::min(fx, ax_safe);
-	}
-
-	auto [fxC, fyC] = applyAccAndJerkConstraints(fx, fy, ego);
-
-	return std::make_tuple(fxC, fyC);
-}
-
-std::tuple<double, double> AdaptivePotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
-	double neighbour_x = neighbour->getCircularX();
-	// double rel_dist_x = fabs(ego->getX() - neighbour_x);
-	double dneigh = neighbour_x - wx1 * (ego->getSpeedX() - neighbour->getSpeedX()) / 2.0;
-	double rel_dist_x = fabs(ego->getX() - dneigh);
-	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
-
-	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
-	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
-
-	double f = ForceIndex / (pow((item1 + item2), q) + 1);
-	double fx{ 0 }, fy{ 0 };
-	if (f > 0.001) {
-		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
-		fx = f * cos(theta);
-		fy = f * sin(theta);
-
-		double fx_sign = (ego->getX() < neighbour_x) ? -1 : 1;
-		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
-
-		double force_index = (ego->getX() < neighbour_x) ? repulse_index : nudge_index;
-		if (modelParams.find(neighbour->getModelName()) != modelParams.end()) {
-			auto param = modelParams[neighbour->getModelName()];
-			force_index = (ego->getX() < neighbour_x) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
-		}
-
-		fx = force_index * fx_sign * fabs(fx);
-		fy = force_index * fy_sign * fabs(fy);
-	}
-	return std::make_tuple(fx, fy);
 }
 
 double AdaptivePotentialLines::calculateSurroundingSpeed(Car* car) {
@@ -299,7 +246,7 @@ std::map<double, double> AdaptivePotentialLines::calculateAvailableLateralFromOc
 	return new_lats;
 }
 
-double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double lower_bound, double upper_bound) {
+double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
 	double car_x = ego->getX();
 	double pl_force = std::nan("");
 	for (const auto& [range, lat_info] : human_free_space) {
@@ -321,24 +268,23 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 			double rel_line = (available_space / areas) * co;
 
 			double space_count = 0;
+			double passed_space = 0.0;
 			for (const auto& [y1, y2] : possible_lats) {
 				double pl_space = y2 - y1;
 				space_count += pl_space;
 				if (rel_line < space_count) {
-					double target_line = y1 + rel_line;
+					double target_line = y1 + rel_line - passed_space;
 					Car* leader = leader_map[ego];
-					double factor = verordnungsindex;
-					if (leader != nullptr && leader->getModelName().compare("Human") == 0) {
-						double factor = verordnungsindex;
-					}
 					assigned_pl[ego] = target_line;
-					pl_force = factor * (target_line - ego->getY());
+					pl_force = apl_corridor_force_index * (target_line - ego->getY());
 					if (sync_file.is_open()) {
 						sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "Y" << ","
 							<< x1 << "," << x2 << "," << target_line << "\n";
 					}
+					car_in_apl[ego] = true;
 					break;
 				}
+				passed_space += pl_space;
 			}
 			break;
 		}
@@ -348,6 +294,7 @@ double AdaptivePotentialLines::calculatePLForceUniformAdaptive(Car* ego, double 
 			sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "N" << ",,,\n";
 		}
 		pl_force = calculatePLForceUniform(ego, lower_bound, upper_bound);
+		car_in_apl[ego] = false;
 	}
 	return pl_force;
 }

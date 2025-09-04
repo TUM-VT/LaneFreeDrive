@@ -2,6 +2,7 @@
 #include "Controller.h"
 #include <set>
 #include <cmath>
+#include <fstream>
 
 
 class PotentialLines : public LFTStrategy {
@@ -16,7 +17,7 @@ protected:
 
 	double FrontDistnce;
 	double BackDistance;
-	double ForceIndex, LowerLong, UpperLong;
+	double ForceIndex, LowerLong, UpperLong, DesireVelocityFI;
 	double Li, Wi, wx1, wx2, wy, verordnungsindex;
 	double Kp1, Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;
@@ -34,8 +35,11 @@ protected:
 	std::map<int, double> cdf_map;
 	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
+	std::ofstream ttc_file;
 
 	void update() override;
+
+	void finalize_simulation() override;
 
 	std::map <Car*, Car*> leader_map;
 
@@ -45,7 +49,7 @@ protected:
 
 	std::tuple<double, double> calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour);
 
-	virtual std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
+	std::tuple<double, double> calculateForces(Car* ego, Car* neighbour, double a, double b);
 
 	std::tuple<double, double> calculateTargetSpeedForce(Car* car);
 
@@ -57,6 +61,8 @@ protected:
 
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
+
+	virtual double calculatePLForce(Car* ego, double lower_bound, double upper_bound);
 
 	double calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 
