@@ -126,7 +126,7 @@ void insert_vehicles() {
 	std::regex reg(",");
 	if (vehicle_init.compare("RANDOM") == 0) {
 		auto rand_config = config["RANDOM Init"];
-		std::string route = gen_config["routes"];
+		std::string route = rand_config["routes"];
 
 		std::mt19937 rng(std::stoi(gen_config["seed"]));
 		std::uniform_real_distribution<double> uni_x(std::stoi(rand_config["lower_x"]), std::stoi(rand_config["upper_x"]));
