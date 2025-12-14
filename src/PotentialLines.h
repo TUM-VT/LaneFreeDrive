@@ -28,7 +28,6 @@ protected:
 	double Accelerate;
 	double MinSafeGap;
 	double k1_boundary, k2_boundary;
-	std::string BoundaryControl;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;

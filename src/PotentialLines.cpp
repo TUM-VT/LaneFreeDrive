@@ -43,7 +43,6 @@ PotentialLines::PotentialLines(iniMap config) {
 	MinSafeGap = stod(secParam["MinSafeGap"]);
 	k1_boundary = stod(secParam["k1_boundary"]);
 	k2_boundary = stod(secParam["k2_boundary"]);
-	BoundaryControl = secParam["BoundaryControl"];
 	setAccAndJerkConstraints(secParam);
 
 	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
@@ -299,28 +298,11 @@ double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 	double step = get_time_step_length();
 	double road_width = get_edge_width(ego->getCurrentEdge());
 
-	double acc_upper_boundary, acc_lower_boundary;
+	double upper_boundary = road_width - ego->getWidth() / 2.0;
+	double acc_upper_boundary = k1_boundary * (upper_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
 
-	if (BoundaryControl.compare("Hard") == 0) {
-		double upper_diff = road_width - (ego->getY() + ego->getWidth() / 2.0);
-		double lower_diff = ego->getY() - ego->getWidth() / 2.0;
-		double speed_to_reach_up = upper_diff / step;
-		acc_upper_boundary = (speed_to_reach_up - ego->getSpeedY()) / step;
-		double speed_to_reach_down = -lower_diff / step;
-		acc_lower_boundary = (speed_to_reach_down - ego->getSpeedY()) / step;
-	}
-	else if (BoundaryControl.compare("Proportional") == 0) {
-		double upper_boundary = road_width - ego->getWidth() / 2.0;
-		acc_upper_boundary = k1_boundary * (upper_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
-
-		double lower_boundary = ego->getWidth() / 2.0;
-		acc_lower_boundary = k1_boundary * (lower_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
-
-	}
-	else {
-		std::cout << "Invalid BoundaryControl parameter " << BoundaryControl << " given. Boundary control not applied";
-		return ay;
-	}
+	double lower_boundary = ego->getWidth() / 2.0;
+	double acc_lower_boundary = k1_boundary * (lower_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
 
 	double fy = MIN(ay, acc_upper_boundary);
 	fy = MAX(fy, acc_lower_boundary);
