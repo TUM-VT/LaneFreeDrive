@@ -246,7 +246,7 @@ std::map<double, double> AdaptivePotentialLines::calculateAvailableLateralFromOc
 	return new_lats;
 }
 
-double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
+double AdaptivePotentialLines::calculatePLForce(Car* ego) {
 	double car_x = ego->getX();
 	double pl_force = std::nan("");
 	for (const auto& [range, lat_info] : human_free_space) {
@@ -293,7 +293,7 @@ double AdaptivePotentialLines::calculatePLForce(Car* ego, double lower_bound, do
 		if (sync_file.is_open()){
 			sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "N" << ",,,\n";
 		}
-		pl_force = calculatePLForceUniform(ego, lower_bound, upper_bound);
+		pl_force = PotentialLines::calculatePLForce(ego);
 		car_in_apl[ego] = false;
 	}
 	return pl_force;

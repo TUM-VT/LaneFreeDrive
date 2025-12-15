@@ -23,8 +23,8 @@ PotentialLines::PotentialLines(iniMap config) {
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
 	DesireVelocityFI = stod(secParam["DesireVelocityForceIndex"]);
-	LowerLong = stod(secParam["LowerLong"]);
-	UpperLong = stod(secParam["UpperLong"]);
+	PLBoundaryMargin = stod(secParam["PLBoundaryMargin"]);
+	PLBoundaryMarginOffsetX = stod(secParam["PLBoundaryMarginOffsetX"]);
 	wx1 = stod(secParam["wx1"]);
 	wy = stod(secParam["wy"]);
 	n = stoi(secParam["n"]);
@@ -41,6 +41,7 @@ PotentialLines::PotentialLines(iniMap config) {
 	Deccelerate = stod(secParam["Deceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
 	MinSafeGap = stod(secParam["MinSafeGap"]);
+	BoundaryControlLookAhead = stod(secParam["BoundaryControlLookAhead"]);
 	k1_boundary = stod(secParam["k1_boundary"]);
 	k2_boundary = stod(secParam["k2_boundary"]);
 	setAccAndJerkConstraints(secParam);
@@ -93,8 +94,8 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	int cross_edge = 0;
 	std::vector<Car*> front_neighbors = getNeighbours(ego, this->FrontDistnce);
 	std::vector<Car*> back_neighbors = getNeighbours(ego, -this->BackDistance);
-
-	double fy_pl = calculatePLForce(ego, LowerLong, UpperLong);
+	
+	double fy_pl = calculatePLForce(ego);
 	auto [fx_nudge, fy_nudge] = calculateNeighbourForces(ego, back_neighbors);
 	auto [fx_repluse, fy_repluse] = calculateNeighbourForces(ego, front_neighbors);
 	auto [ax_desired, ay_desired] = calculateTargetSpeedForce(ego);
@@ -252,13 +253,16 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	return std::make_tuple(ax_desired, ay_desired);
 }
 
-double PotentialLines::calculatePLForce(Car* ego, double lower_bound, double upper_bound) {
+double PotentialLines::calculatePLForce(Car* ego) {
 	double fy_pl{ 0 };
+	auto [left_boundary, right_boundary] = ego->calBoundary(0);
+	double upper_bound = MAX(left_boundary, right_boundary) - PLBoundaryMargin;
+	double lower_bound = MIN(left_boundary, right_boundary) + PLBoundaryMargin;
 	if (PLForceModel.compare("UNIFORM") == 0) {
-		fy_pl = calculatePLForceUniform(ego, LowerLong, UpperLong);
+		fy_pl = calculatePLForceUniform(ego, lower_bound, upper_bound);
 	}
 	else {
-		fy_pl = calculatePLForceCDF(ego, LowerLong, UpperLong);
+		fy_pl = calculatePLForceCDF(ego, lower_bound, upper_bound);
 	}
 	return fy_pl;
 }
@@ -296,13 +300,12 @@ double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, dou
 
 double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 	double step = get_time_step_length();
-	double road_width = get_edge_width(ego->getCurrentEdge());
+	auto [left_boundary, right_boundary] = ego->calBoundary(BoundaryControlLookAhead);
+	double upper_bound = MAX(left_boundary, right_boundary) - ego->getWidth() / 2.0;
+	double lower_bound = MIN(left_boundary, right_boundary) + ego->getWidth() / 2.0;
 
-	double upper_boundary = road_width - ego->getWidth() / 2.0;
-	double acc_upper_boundary = k1_boundary * (upper_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
-
-	double lower_boundary = ego->getWidth() / 2.0;
-	double acc_lower_boundary = k1_boundary * (lower_boundary - ego->getY()) - k2_boundary * ego->getSpeedY();
+	double acc_upper_boundary = k1_boundary * (upper_bound - ego->getY()) - k2_boundary * ego->getSpeedY();
+	double acc_lower_boundary = k1_boundary * (lower_bound - ego->getY()) - k2_boundary * ego->getSpeedY();
 
 	double fy = MIN(ay, acc_upper_boundary);
 	fy = MAX(fy, acc_lower_boundary);

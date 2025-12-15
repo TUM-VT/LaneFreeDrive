@@ -17,7 +17,9 @@ protected:
 
 	double FrontDistnce;
 	double BackDistance;
-	double ForceIndex, LowerLong, UpperLong, DesireVelocityFI;
+	double ForceIndex, DesireVelocityFI;
+	double PLBoundaryMargin;
+	double PLBoundaryMarginOffsetX;
 	double Li, Wi, wx1, wx2, wy, verordnungsindex;
 	double Kp1, Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;
@@ -27,7 +29,7 @@ protected:
 	double Deccelerate;
 	double Accelerate;
 	double MinSafeGap;
-	double k1_boundary, k2_boundary;
+	double BoundaryControlLookAhead, k1_boundary, k2_boundary;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;
@@ -61,7 +63,7 @@ protected:
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
 
-	virtual double calculatePLForce(Car* ego, double lower_bound, double upper_bound);
+	virtual double calculatePLForce(Car* ego);
 
 	double calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
 

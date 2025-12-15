@@ -167,6 +167,18 @@ std::tuple<double, double> Car::applyAcceleration() {
 	return std::make_tuple(ax, ay);
 }
 
+std::tuple<double, double> Car::calDistanceToBoundary(double offset_x, double offset_y) {
+	double distance_left{ 0 }, distance_right{ 0 };
+	get_distance_to_road_boundaries_at(this->numID, offset_x, offset_y, &distance_left, &distance_right, NULL, NULL, NULL);
+	return std::make_tuple(distance_left, distance_right);
+}
+
+std::tuple<double, double> Car::calBoundary(double offset_x) {
+	double global_x{ 0 }, global_y{ 0 };
+	get_global_position_of_road_boundaries_at(this->numID, offset_x, &global_x, &global_y);
+	return std::make_tuple(global_x, global_y);
+}
+
 void Car::update() {
 	speedX = get_speed_x(numID);
 	speedY = get_speed_y(numID);

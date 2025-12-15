@@ -29,7 +29,7 @@ protected:
 
 	void finish_time_step() override;
 
-	double calculatePLForce(Car* ego, double lower_bound, double upper_bound) override;
+	double calculatePLForce(Car* ego) override;
 
 	double calculateAPLMargin(Car* car);
 

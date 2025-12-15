@@ -48,6 +48,8 @@ public:
 	Car(const Car& car);
 	void update();
 	std::tuple<double, double> applyAcceleration();
+	std::tuple<double, double> calDistanceToBoundary(double offset_x, double offset_y);
+	std::tuple<double, double> calBoundary(double offset_x);
 
 	double getWidth() { return width; }
 	double getLength() { return length; }
@@ -64,11 +66,11 @@ public:
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
 	NumericalID getCurrentEdge() { return currentEdge; }
+	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
 	void setX(double x) { this->x = x; }
 	void setCircularX(double circularX) { this->circularX = circularX; }
-	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
 protected:
 	double width;
