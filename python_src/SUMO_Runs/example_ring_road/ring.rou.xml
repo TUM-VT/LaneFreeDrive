@@ -17,5 +17,6 @@
 	<vType id="Human_6" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.15" width="1.84"  minGap="0.2" color="red"/>
 	<vType id="Human_7" vClass="passenger" carFollowModel="LaneFree" departSpeed="30" maxSpeed="35" length="5.2" width="1.88"  minGap="0.2" color="red"/>
 	
-    <route id="route0"  edges="road_stretch"/>
+	<route id="route0"  edges="road_stretch" leftBoundaryLevelPoints="10.2 10.2" leftBoundaryOffsets="100" leftBoundarySlopes="0.045" rightBoundaryLevelPoints="0 0" rightBoundaryOffsets="100" rightBoundarySlopes="0.05" rightBoundaryConstant="0" leftBoundaryVisualizerColor="red" rightBoundaryVisualizerColor="red"/>
+
 </routes>

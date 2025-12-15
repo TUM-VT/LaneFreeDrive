@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<net version="1.9" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+<net version="1.3" junctionCornerDetail="5" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
 
-    <location netOffset="0.00,0.00" convBoundary="0.00,0.00,1000.00,0.00" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
+    <location netOffset="0.00,0.00" convBoundary="0.00,10.20,1000.00,10.20" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
 
-    <edge id="road_stretch" from="gneJ1" to="gneJ2" priority="-1" spreadType="center" length="1000.00">
-        <lane id="road_stretch_0" index="0" speed="45.00" length="1000.00" width="10.20" shape="0.00,0.00 1000.00,0.00"/>
+    <edge id="road_stretch" from="gneJ1" to="gneJ2" priority="-1">
+        <lane id="road_stretch_0" index="0" speed="50.00" length="1000.00" width="10.20" shape="0.00,5.10 1000.00,5.10"/>
     </edge>
 
-    <junction id="gneJ1" type="dead_end" x="0.00" y="0.00" incLanes="" intLanes="" shape="0.00,5.10 0.00,-5.10"/>
-    <junction id="gneJ2" type="dead_end" x="1000.00" y="0.00" incLanes="road_stretch_0" intLanes="" shape="1000.00,-5.10 1000.00,5.10"/>
+    <junction id="gneJ1" type="dead_end" x="0.00" y="10.20" incLanes="" intLanes="" shape="0.00,10.20 0.00,0.00"/>
+    <junction id="gneJ2" type="dead_end" x="1000.00" y="10.20" incLanes="road_stretch_0" intLanes="" shape="1000.00,0.00 1000.00,10.20"/>
 
 </net>
