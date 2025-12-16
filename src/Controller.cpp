@@ -179,6 +179,14 @@ std::tuple<double, double> Car::calBoundary(double offset_x) {
 	return std::make_tuple(global_x, global_y);
 }
 
+double Car::getRelativeDistanceX(Car* other) {
+	return get_relative_distance_x(this->numID, other->getNumId());
+}
+
+double Car::getRelativeDistanceY(Car* other) {
+	return get_relative_distance_y(this->numID, other->getNumId());
+}
+
 void Car::update() {
 	speedX = get_speed_x(numID);
 	speedY = get_speed_y(numID);

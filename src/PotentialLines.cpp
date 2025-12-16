@@ -118,7 +118,7 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 			if (leader != nullptr) {
 				double relative_speed = ego->getSpeedX() - leader->getSpeedX();
 				if (relative_speed > 0) {
-					double lead_gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+					double lead_gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 					double TTC = lead_gap / relative_speed;
 					ttc_file << sim_time << "," << ego->getVehName() << "," << leader->getVehName() << std::fixed << std::setprecision(2) << "," << lead_gap << "," << ego->getSpeedX() << "," << leader->getSpeedX() << "," << TTC << std::endl;
 				}
@@ -163,7 +163,7 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 	double a = ReactionTime * Deccelerate;
-	double gap = leader->getCircularX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
+	double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap));
 	if (gap - MinSafeGap < 0) {
 		vsafe = 0;
@@ -210,12 +210,12 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 }
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
-	double neighbour_x = neighbour->getCircularX();
-	double rel_dist_x = fabs(ego->getX() - neighbour_x);
-	double rel_dist_y = fabs(ego->getY() - neighbour->getY());
+	// The following relative distances are "neigbour" - "ego"
+	double rel_dist_x = ego->getRelativeDistanceX(neighbour);
+	double rel_dist_y = ego->getRelativeDistanceY(neighbour);
 
-	double item1 = pow((2.0 * rel_dist_x / major_axis), n);
-	double item2 = pow((2.0 * rel_dist_y / minor_axis), p);
+	double item1 = pow((2.0 * fabs(rel_dist_x) / major_axis), n);
+	double item2 = pow((2.0 * fabs(rel_dist_y) / minor_axis), p);
 
 	double desire_ego = (ego->getDesiredSpeed() - ego->getSpeedX() ) / (ego->getDesiredSpeed());
 	double desire_neighbour = (neighbour->getDesiredSpeed() - neighbour->getSpeedX()) / (neighbour->getDesiredSpeed());
@@ -223,17 +223,17 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 	double f = (ForceIndex + desire_factor) / (pow((item1 + item2), q) + 1);
 	double fx{ 0 }, fy{ 0 };
 	if (f > 0.001) {
-		double theta = atan((ego->getY() - neighbour->getY()) / (ego->getX() - neighbour_x));
+		double theta = atan(rel_dist_y / rel_dist_x);
 		fx = f * cos(theta);
 		fy = f * sin(theta);
 
-		double fx_sign = (ego->getX() < neighbour_x) ? -1 : 1;
-		double fy_sign = (ego->getY() < neighbour->getY()) ? -1 : 1;
+		double fx_sign = (rel_dist_x > 0) ? -1 : 1;
+		double fy_sign = (rel_dist_y > 0) ? -1 : 1;
 
-		double force_index = (ego->getX() < neighbour_x) ? repulse_index : nudge_index;
+		double force_index = (rel_dist_x > 0) ? repulse_index : nudge_index;
 		if (modelParams.find(neighbour->getModelName()) != modelParams.end()) {
 			auto param = modelParams[neighbour->getModelName()];
-			force_index = (ego->getX() < neighbour_x) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
+			force_index = (rel_dist_x > 0) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
 		}
 
 		fx = force_index * fx_sign * fabs(fx);

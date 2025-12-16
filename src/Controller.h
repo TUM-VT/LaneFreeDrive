@@ -50,6 +50,8 @@ public:
 	std::tuple<double, double> applyAcceleration();
 	std::tuple<double, double> calDistanceToBoundary(double offset_x, double offset_y);
 	std::tuple<double, double> calBoundary(double offset_x);
+	double getRelativeDistanceX(Car* other);
+	double getRelativeDistanceY(Car* other);
 
 	double getWidth() { return width; }
 	double getLength() { return length; }
