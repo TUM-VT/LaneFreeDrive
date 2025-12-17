@@ -67,6 +67,7 @@ public:
 	double getAccY() { return accY; }
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
+	double getCurrentEdgeWidth();
 	NumericalID getCurrentEdge() { return currentEdge; }
 	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
@@ -81,8 +82,8 @@ protected:
 	double speedY;
 	double accX = 0;
 	double accY = 0;
-	double x;
-	double y;
+	double x;			// This is the x position within the current edge
+	double y;			// This is the current y position relative to the current edge
 	double desiredSpeed;
 	// This attribute is used to store the corrected x position of the vehicle after a call to the getNeighbours method of the LFTStrategy class.
 	double circularX;

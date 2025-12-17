@@ -169,22 +169,26 @@ std::tuple<double, double> Car::applyAcceleration() {
 
 std::tuple<double, double> Car::calDistanceToBoundary(double offset_x, double offset_y) {
 	double distance_left{ 0 }, distance_right{ 0 };
-	get_distance_to_road_boundaries_at(this->numID, offset_x, offset_y, &distance_left, &distance_right, NULL, NULL, NULL);
+	get_distance_to_road_boundaries_at(numID, offset_x, offset_y, &distance_left, &distance_right, NULL, NULL, NULL);
 	return std::make_tuple(distance_left, distance_right);
 }
 
 std::tuple<double, double> Car::calBoundary(double offset_x) {
 	double global_x{ 0 }, global_y{ 0 };
-	get_global_position_of_road_boundaries_at(this->numID, offset_x, &global_x, &global_y);
+	get_global_position_of_road_boundaries_at(numID, offset_x, &global_x, &global_y);
 	return std::make_tuple(global_x, global_y);
 }
 
 double Car::getRelativeDistanceX(Car* other) {
-	return get_relative_distance_x(this->numID, other->getNumId());
+	return get_relative_distance_x(numID, other->getNumId());
 }
 
 double Car::getRelativeDistanceY(Car* other) {
-	return get_relative_distance_y(this->numID, other->getNumId());
+	return get_relative_distance_y(numID, other->getNumId());
+}
+
+double Car::getCurrentEdgeWidth() {
+	return get_edge_width(currentEdge);
 }
 
 void Car::update() {

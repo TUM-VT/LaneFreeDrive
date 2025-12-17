@@ -255,9 +255,9 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 
 double PotentialLines::calculatePLForce(Car* ego) {
 	double fy_pl{ 0 };
-	auto [left_boundary, right_boundary] = ego->calBoundary(0);
-	double upper_bound = MAX(left_boundary, right_boundary) - PLBoundaryMargin;
-	double lower_bound = MIN(left_boundary, right_boundary) + PLBoundaryMargin;
+	double edge_width = ego->getCurrentEdgeWidth();
+	double lower_bound = PLBoundaryMargin;
+	double upper_bound = edge_width - PLBoundaryMargin;
 	if (PLForceModel.compare("UNIFORM") == 0) {
 		fy_pl = calculatePLForceUniform(ego, lower_bound, upper_bound);
 	}
@@ -300,15 +300,17 @@ double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, dou
 
 double PotentialLines::controlRoadBoundary(Car* ego, double ay) {
 	double step = get_time_step_length();
-	auto [left_boundary, right_boundary] = ego->calBoundary(BoundaryControlLookAhead);
-	double upper_bound = MAX(left_boundary, right_boundary) - ego->getWidth() / 2.0;
-	double lower_bound = MIN(left_boundary, right_boundary) + ego->getWidth() / 2.0;
+	auto [left_boundary_dist, right_boundary_dist] = ego->calDistanceToBoundary(BoundaryControlLookAhead, 0);
+	
+	double left_bound = left_boundary_dist - ego->getWidth() / 2.0;
+	double left_boundary_acc_limit = k1_boundary * left_bound - k2_boundary * ego->getSpeedY();
 
-	double acc_upper_boundary = k1_boundary * (upper_bound - ego->getY()) - k2_boundary * ego->getSpeedY();
-	double acc_lower_boundary = k1_boundary * (lower_bound - ego->getY()) - k2_boundary * ego->getSpeedY();
+	// The right boundary is below the vehicle so use the negative sign.
+	double right_bound = - right_boundary_dist + ego->getWidth() / 2.0;
+	double right_boundary_acc_limit = k1_boundary * right_bound - k2_boundary * ego->getSpeedY();
 
-	double fy = MIN(ay, acc_upper_boundary);
-	fy = MAX(fy, acc_lower_boundary);
+	double fy = MIN(ay, left_boundary_acc_limit);
+	fy = MAX(fy, right_boundary_acc_limit);
 	return fy;
 }
 
