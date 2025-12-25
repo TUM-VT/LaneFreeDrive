@@ -72,7 +72,7 @@ void StripBasedHuman::update() {
 	}
 }
 
-StripBasedHuman::StripBasedHuman(iniMap config) {
+StripBasedHuman::StripBasedHuman(iniMap config): LFTStrategy(config) {
 	printf("Setting parameters for Strip Based Human Driver strategy\n");
 	map<string, string> secParam = config["Strip Based Human Parameters"];
 

@@ -28,6 +28,41 @@ using std::string;
 
 std::unordered_set<std::string> vehTypesBoundaryError;
 
+LFTStrategy::LFTStrategy(iniMap config) {
+	// Set ramp parameters
+	map<string, string> ramp_info = config["Ramp Information"];
+	on_ramp_edges = splitString(ramp_info["on_ramp_edges"], ",");
+	off_ramp_edges = splitString(ramp_info["off_ramp_edges"], ",");
+}
+
+bool LFTStrategy::isOnRampSituation(Car* car) {
+	bool on_ramp_situation = false;
+	if (car->getIfOnRampVeh()) {
+		string current_edge = car->getCurrentEdgeName();
+		for (string edge : on_ramp_edges) {
+			if (current_edge.compare(edge) == 0) {
+				on_ramp_situation = true;
+				break;
+			}
+		}
+	}
+	return on_ramp_situation;
+}
+
+bool LFTStrategy::isOffRampSituation(Car* car) {
+	bool off_ramp_situation = false;
+	if (car->getIfOffRampVeh()) {
+		string current_edge = car->getCurrentEdgeName();
+		for (string edge : off_ramp_edges) {
+			if (current_edge.compare(edge) == 0) {
+				off_ramp_situation = true;
+				break;
+			}
+		}
+	}
+	return off_ramp_situation;
+}
+
 void LFTStrategy::setCircular(iniMap config) {
 	auto it = config.find("General Parameters");
 	int circular_int = std::stoi(it->second["circular_movement"]);
@@ -139,6 +174,15 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 			}
 		}
 	}
+
+	auto ramp_info = config["Ramp Information"];
+	if (vehName.find(ramp_info["on_ramp_veh_ident_key"]) != std::string::npos) {
+		isOnRampVeh = true;
+	}
+	if (vehName.find(ramp_info["off_ramp_veh_ident_key"]) != std::string::npos) {
+		isOffRampVeh = true;
+	}
+
 }
 
 Car::Car(const Car& car) {
@@ -157,6 +201,10 @@ Car::Car(const Car& car) {
 	desiredSpeed = car.desiredSpeed;
 	currentEdge = car.currentEdge;
 	lftstrategy = car.lftstrategy;
+}
+
+std::string Car::getCurrentEdgeName() { 
+	return get_edge_name(currentEdge); 
 }
 
 std::tuple<double, double> Car::applyAcceleration() {

@@ -16,7 +16,7 @@
 using std::map;
 using std::string;
 
-PotentialLines::PotentialLines(iniMap config) {
+PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	printf("Setting parameters for Potential Lines strategy\n");
 	map<string, string> secParam = config["Potential Lines Parameters"];
 	FrontDistnce = stod(secParam["FrontDistance"]);

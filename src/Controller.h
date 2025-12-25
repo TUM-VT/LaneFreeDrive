@@ -16,8 +16,7 @@ class Car;
 
 class LFTStrategy {
 public:
-	LFTStrategy() {};
-	LFTStrategy(iniMap config){};
+	LFTStrategy(iniMap config);
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
 	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
 	// This method is called at the end of the simulation
@@ -39,6 +38,13 @@ protected:
 	std::map<std::string, std::tuple<double, double>> acc_jerk_limits;
 	std::tuple<double, double> applyAccAndJerkConstraints(double ax, double ay, Car* car);
 	void setAccAndJerkConstraints(std::map<std::string, std::string> config);
+	// Checks if the vehicle is under on-ramp situation
+	bool isOnRampSituation(Car* car);
+	// Checks if the vehicle is under off-ramp situation
+	bool isOffRampSituation(Car* car);
+
+private:
+	std::vector<std::string> on_ramp_edges, off_ramp_edges;
 };
 
 class Car {
@@ -68,7 +74,11 @@ public:
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
 	double getCurrentEdgeWidth();
+	bool getIfOnRampVeh() { return isOnRampVeh; }
+	bool getIfOffRampVeh() { return isOffRampVeh; }
+
 	NumericalID getCurrentEdge() { return currentEdge; }
+	std::string getCurrentEdgeName();
 	LFTStrategy* getLFTStrategy() { return lftstrategy; }
 
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
@@ -85,6 +95,7 @@ protected:
 	double x;			// This is the x position within the current edge
 	double y;			// This is the current y position relative to the current edge
 	double desiredSpeed;
+	bool isOnRampVeh{ false }, isOffRampVeh{ false };
 	// This attribute is used to store the corrected x position of the vehicle after a call to the getNeighbours method of the LFTStrategy class.
 	double circularX;
 	std::string typeName;
