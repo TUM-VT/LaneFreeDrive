@@ -254,20 +254,22 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 }
 
 double PotentialLines::calculatePLForce(Car* ego) {
-	double fy_pl{ 0 };
 	double edge_width = ego->getCurrentEdgeWidth();
 	double lower_bound = PLBoundaryMargin;
 	double upper_bound = edge_width - PLBoundaryMargin;
+	double target_line;
 	if (PLForceModel.compare("UNIFORM") == 0) {
-		fy_pl = calculatePLForceUniform(ego, lower_bound, upper_bound);
+		target_line = calculateTargetLineUniform(ego, lower_bound, upper_bound);
 	}
 	else {
-		fy_pl = calculatePLForceCDF(ego, lower_bound, upper_bound);
+		target_line = calculateTargetLineCDF(ego, lower_bound, upper_bound);
 	}
+	assigned_pl[ego] = target_line;
+	double fy_pl = verordnungsindex * (target_line - ego->getY());
 	return fy_pl;
 }
 
-double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound) {
+double PotentialLines::calculateTargetLineCDF(Car* ego, double lower_bound, double upper_bound) {
 	double vd = get_desired_speed(ego->getNumId());
 	int vd_key = 1000 * std::floor(vd * 1000.0);
 	// Find the vd_key in cdf_map otherwise throw an error
@@ -279,23 +281,18 @@ double PotentialLines::calculatePLForceCDF(Car* ego, double lower_bound, double 
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + cdf_value * (upper_bound - lower_bound);
-	assigned_pl[ego] = target_line;
-	double plForce = verordnungsindex * (target_line - ego->getY());
-	return plForce;
+	return target_line;
 }
 
 
 
-double PotentialLines::calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound) {
+double PotentialLines::calculateTargetLineUniform(Car* ego, double lower_bound, double upper_bound) {
 	double vd = ego->getDesiredSpeed();
 
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + ((upper_bound - lower_bound) / areas) * co;
-	assigned_pl[ego] = target_line;
-	double ordnungskraft = verordnungsindex * (target_line - ego->getY());
-
-	return ordnungskraft;
+	return target_line;
 }
 
 double PotentialLines::controlRoadBoundary(Car* ego, double ay) {

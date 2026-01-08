@@ -65,9 +65,9 @@ protected:
 
 	virtual double calculatePLForce(Car* ego);
 
-	double calculatePLForceCDF(Car* ego, double lower_bound, double upper_bound);
+	double calculateTargetLineCDF(Car* ego, double lower_bound, double upper_bound);
 
-	double calculatePLForceUniform(Car* ego, double lower_bound, double upper_bound);
+	double calculateTargetLineUniform(Car* ego, double lower_bound, double upper_bound);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html
