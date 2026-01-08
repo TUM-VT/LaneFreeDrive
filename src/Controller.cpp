@@ -222,9 +222,9 @@ std::tuple<double, double> Car::calDistanceToBoundary(double offset_x, double of
 }
 
 std::tuple<double, double> Car::calBoundary(double offset_x) {
-	double global_x{ 0 }, global_y{ 0 };
-	get_global_position_of_road_boundaries_at(numID, offset_x, &global_x, &global_y);
-	return std::make_tuple(global_x, global_y);
+	double left_boundary_y{ 0 }, right_boundary_y{ 0 };
+	get_global_position_of_road_boundaries_at(numID, offset_x, &left_boundary_y, &right_boundary_y);
+	return std::make_tuple(left_boundary_y, right_boundary_y);
 }
 
 double Car::getRelativeDistanceX(Car* other) {
@@ -233,6 +233,10 @@ double Car::getRelativeDistanceX(Car* other) {
 
 double Car::getRelativeDistanceY(Car* other) {
 	return get_relative_distance_y(numID, other->getNumId());
+}
+
+std::tuple<double, double> Car::getGlobalPosition() {
+	return std::make_tuple(get_global_position_x(numID), get_global_position_y(numID));
 }
 
 double Car::getCurrentEdgeWidth() {

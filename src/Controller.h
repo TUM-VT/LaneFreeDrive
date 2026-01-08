@@ -58,6 +58,7 @@ public:
 	std::tuple<double, double> calBoundary(double offset_x);
 	double getRelativeDistanceX(Car* other);
 	double getRelativeDistanceY(Car* other);
+	std::tuple<double, double> getGlobalPosition();
 
 	double getWidth() { return width; }
 	double getLength() { return length; }

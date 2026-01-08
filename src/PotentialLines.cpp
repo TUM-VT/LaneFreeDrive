@@ -257,6 +257,10 @@ double PotentialLines::calculatePLForce(Car* ego) {
 	double edge_width = ego->getCurrentEdgeWidth();
 	double lower_bound = PLBoundaryMargin;
 	double upper_bound = edge_width - PLBoundaryMargin;
+	auto [global_left_boundary_y, global_right_boundary_y] = ego->calBoundary(BoundaryControlLookAhead);
+	lower_bound = global_right_boundary_y + PLBoundaryMargin;
+	upper_bound = global_left_boundary_y - PLBoundaryMargin;
+
 	double target_line;
 	if (PLForceModel.compare("UNIFORM") == 0) {
 		target_line = calculateTargetLineUniform(ego, lower_bound, upper_bound);
@@ -265,7 +269,8 @@ double PotentialLines::calculatePLForce(Car* ego) {
 		target_line = calculateTargetLineCDF(ego, lower_bound, upper_bound);
 	}
 	assigned_pl[ego] = target_line;
-	double fy_pl = verordnungsindex * (target_line - ego->getY());
+	auto [global_x, global_y] = ego->getGlobalPosition();
+	double fy_pl = verordnungsindex * (target_line - global_y);
 	return fy_pl;
 }
 
