@@ -31,8 +31,8 @@ std::unordered_set<std::string> vehTypesBoundaryError;
 LFTStrategy::LFTStrategy(iniMap config) {
 	// Set ramp parameters
 	map<string, string> ramp_info = config["Ramp Information"];
-	on_ramp_edges = splitString(ramp_info["on_ramp_edges"], ",");
-	off_ramp_edges = splitString(ramp_info["off_ramp_edges"], ",");
+	on_ramp_edges = splitString(ramp_info["OnRampEdges"], ",");
+	off_ramp_edges = splitString(ramp_info["OffRampEdges"], ",");
 }
 
 bool LFTStrategy::isOnRampSituation(Car* car) {
