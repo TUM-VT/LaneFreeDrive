@@ -262,10 +262,10 @@ std::vector<Car*> LFTStrategy::getNeighbours(Car* ego, double distance) {
 	NumericalID* neighbors;
 	std::vector<Car*> neighborCars = {};
 	if (distance >= 0) {
-		neighbors = get_all_neighbor_ids_front(ego->getNumId(), distance, 0, &size);
+		neighbors = get_all_neighbor_ids_front(ego->getNumId(), distance, 1, &size);
 	}
 	else {
-		neighbors = get_all_neighbor_ids_back(ego->getNumId(), -distance, 0, &size);
+		neighbors = get_all_neighbor_ids_back(ego->getNumId(), -distance, 1, &size);
 	}
 
 	for (int i = 0; i < size; i++) {
