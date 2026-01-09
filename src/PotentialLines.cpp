@@ -35,6 +35,7 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	Kp1 = stod(secParam["kp1"]);
 	Kp2 = stod(secParam["kp2"]);
 	verordnungsindex = stod(secParam["pl_force_index"]);
+	kpl_off_ramp = stod(secParam["kpl_off_ramp"]);
 	nudge_index = stod(secParam["nudge_index"]);
 	repulse_index = stod(secParam["repulse_index"]);
 	ReactionTime = stod(secParam["ReactionTime"]);
@@ -254,12 +255,9 @@ std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 }
 
 double PotentialLines::calculatePLForce(Car* ego) {
-	double edge_width = ego->getCurrentEdgeWidth();
-	double lower_bound = PLBoundaryMargin;
-	double upper_bound = edge_width - PLBoundaryMargin;
 	auto [global_left_boundary_y, global_right_boundary_y] = ego->calBoundary(BoundaryControlLookAhead);
-	lower_bound = global_right_boundary_y + PLBoundaryMargin;
-	upper_bound = global_left_boundary_y - PLBoundaryMargin;
+	double lower_bound = global_right_boundary_y + PLBoundaryMargin;
+	double upper_bound = global_left_boundary_y - PLBoundaryMargin;
 
 	double target_line;
 	if (PLForceModel.compare("UNIFORM") == 0) {
@@ -270,7 +268,11 @@ double PotentialLines::calculatePLForce(Car* ego) {
 	}
 	assigned_pl[ego] = target_line;
 	auto [global_x, global_y] = ego->getGlobalPosition();
-	double fy_pl = verordnungsindex * (target_line - global_y);
+	double kpl = verordnungsindex;
+	if (isOffRampSituation(ego)) 
+		kpl = verordnungsindex + kpl_off_ramp * (ego->getX() / ego->getCurrentEdgeLength());
+
+	double fy_pl = kpl * (target_line - global_y);
 	return fy_pl;
 }
 

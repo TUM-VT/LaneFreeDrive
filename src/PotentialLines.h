@@ -20,7 +20,7 @@ protected:
 	double ForceIndex, DesireVelocityFI;
 	double PLBoundaryMargin;
 	double PLBoundaryMarginOffsetX;
-	double Li, Wi, wx1, wx2, wy, verordnungsindex;
+	double Li, Wi, wx1, wx2, wy, verordnungsindex, kpl_off_ramp;
 	double Kp1, Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;
 	double nudge_index, repulse_index;

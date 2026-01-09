@@ -75,6 +75,7 @@ public:
 	double getDesiredSpeed() { return desiredSpeed; }
 	double getCircularX() { return circularX; }
 	double getCurrentEdgeWidth();
+	double getCurrentEdgeLength();
 	bool getIfOnRampVeh() { return isOnRampVeh; }
 	bool getIfOffRampVeh() { return isOffRampVeh; }
 

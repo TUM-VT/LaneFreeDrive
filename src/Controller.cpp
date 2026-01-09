@@ -243,6 +243,10 @@ double Car::getCurrentEdgeWidth() {
 	return get_edge_width(currentEdge);
 }
 
+double Car::getCurrentEdgeLength() {
+	return get_edge_length(currentEdge);
+}
+
 void Car::update() {
 	speedX = get_speed_x(numID);
 	speedY = get_speed_y(numID);
