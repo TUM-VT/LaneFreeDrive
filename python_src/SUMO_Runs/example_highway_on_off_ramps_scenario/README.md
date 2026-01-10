@@ -1,0 +1,6 @@
+This on- and off- ramp example is adapted from the example "06_highway_on_off_ramps_scenario" of the TrafficFluid-Sim.
+
+An example of the LFT controller paramters for the scenario is also provided as config.ini. 
+The most important parameters for the on- and off-ramps scenarios to work are the parameters under the section [Ramp Information] of the config.ini file. These parameters are used to idenify the edges and the on- and off-ramp vehicles.
+The rest of the parameters under Potential Lines (PL) Parameters section can be tuned according to the scenario.
+It is also important to note that since the PL controller assigns lateral positions according to minimum and maximum speeds, the parameters min_desired_speed and max_desired_speed given under the "General Parameters" section must correspond with speeds given in the route file. Otherwise, for consistency, the desired speeds can be assigned to vehicles by the LFT plugin using the "speed_dist" parameter given "General Parameters" section. Leave this paramters empty if you want the speeds to be controlled by the route file but still make sure that parameters min_desired_speed and max_desired_speed are correctly configured in the config.ini.  

@@ -1,0 +1,206 @@
+<routes>
+   
+    <vTypeDistribution id="typedist1">
+        <vType id="AV_1" vClass="passenger" maxSpeed="35" carFollowModel="LaneFree" length="3.20" width="1.60" minGap="0" tau="0.2" minGapLat="0.2" color = "blue"  probability="0.1666"/>
+        <vType id="AV_2" vClass="passenger" maxSpeed="35" carFollowModel="LaneFree" length="3.90" width="1.70" minGap="0" tau="0.2" minGapLat="0.2" color = "green"  probability="0.1666"/>
+        <vType id="AV_3" vClass="passenger" maxSpeed="35" carFollowModel="LaneFree" length="4.25" width="1.80" minGap="0" tau="0.2" minGapLat="0.2" color = "magenta"  probability="0.1666"/>
+    </vTypeDistribution>
+    
+    <route id="main_highway"  edges="warm_up segment1 segment2 segment3 segment4 segment5 segment6" leftBoundaryLevelPoints="0 0 0 0 0 0 0" leftBoundaryOffsets="500 1000 1500 2000 2500 3000" leftBoundarySlopes="0.045 0.045 0.045 0.045 0.045 0.045" rightBoundaryLevelPoints="-10.2 -10.2" rightBoundaryOffsets="1020" rightBoundarySlopes="0.01" rightBoundaryConstant="-10.2" leftBoundaryVisualizerColor="blue" rightBoundaryVisualizerColor="blue" />
+    <route id="on_ramp_to_highway"  edges="segment5  segment6"  leftBoundaryLevelPoints="-10.2 0 0" leftBoundaryOffsets="2800 3000" leftBoundarySlopes="0.01 0.01" rightBoundaryLevelPoints="-13.2 -10.2" rightBoundaryOffsets="2850" rightBoundarySlopes="0.007" rightBoundaryConstant="-10.2" leftBoundaryVisualizerColor="orange" rightBoundaryVisualizerColor="orange"/>
+    <route id="exit_from_off_ramp"  edges="warm_up segment1 segment2" leftBoundaryLevelPoints="0 0 0 -10.2" leftBoundaryOffsets="500 1000 1140" leftBoundarySlopes="0.01 0.01 0.01" rightBoundaryLevelPoints="-10.2 -13.2" rightBoundaryOffsets="1100" rightBoundarySlopes="0.05" rightBoundaryConstant="-10.2" leftBoundaryVisualizerColor="green" rightBoundaryVisualizerColor="green"/>
+    
+    
+    <flow id="AV_highway" type="typedist1" begin="0" end="300" probability="0.02" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp" type="typedist1" begin="0" end="300" probability="0.02" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_off_ramp" type="typedist1" begin="0" end="300" probability="0.02" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow>
+
+
+    <flow id="AV_highway2" type="typedist1" begin="300" end="600" probability="0.03" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway2" type="typedist1" begin="300" end="600" probability="0.003" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp2" type="typedist1" begin="300" end="600" probability="0.0015" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+    <flow id="AV_highway3" type="typedist1" begin="600" end="900" probability="0.035" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp_highway3" type="typedist1" begin="600" end="900" probability="0.005" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp3" type="typedist1" begin="600" end="900" probability="0.003" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow> 
+
+
+
+    <flow id="AV_highway4" type="typedist1" begin="900" end="1200" probability="0.045" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp_highway4" type="typedist1" begin="900" end="1200" probability="0.005" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp4" type="typedist1" begin="900" end="1200" probability="0.005" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow>
+
+
+    <flow id="AV_highway5" type="typedist1" begin="1200" end="1500" probability="0.055" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp_highway5" type="typedist1" begin="1200" end="1500" probability="0.006" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp5" type="typedist1" begin="1200" end="1500" probability="0.0015" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow>
+
+
+    <flow id="AV_highway6" type="typedist1" begin="1500" end="1800" probability="0.065" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp_highway6" type="typedist1" begin="1500" end="1800" probability="0.007" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp6" type="typedist1" begin="1500" end="1800" probability="0.0015" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow>
+
+
+
+    <flow id="AV_highway7" type="typedist1" begin="1800" end="2100" probability="0.07" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">        
+    </flow>
+
+    <flow id="AV_on_ramp_highway7" type="typedist1" begin="1800" end="2100" probability="0.007" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp7" type="typedist1" begin="1800" end="2100" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">        
+    </flow> 
+
+
+    <flow id="AV_highway8" type="typedist1" begin="2100" end="2400" probability="0.075" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway8" type="typedist1" begin="2100" end="2400" probability="0.01" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp8" type="typedist1" begin="2100" end="2400" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway9" type="typedist1" begin="2400" end="2700" probability="0.076" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway9" type="typedist1" begin="2400" end="2700" probability="0.01" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp9" type="typedist1" begin="2400" end="2700" probability="0.002" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway10" type="typedist1" begin="2700" end="3000" probability="0.067" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway10" type="typedist1" begin="2700" end="3000" probability="0.003" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+
+    <flow id="AV_highway_off_ramp10" type="typedist1" begin="2700" end="3000" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+    <flow id="AV_highway11" type="typedist1" begin="3000" end="3300" probability="0.058" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway11" type="typedist1" begin="3000" end="3300" probability="0.003" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp11" type="typedist1" begin="3000" end="3300" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway12" type="typedist1" begin="3300" end="3600" probability="0.05" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway12" type="typedist1" begin="3300" end="3600" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp12" type="typedist1" begin="3300" end="3600" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway13" type="typedist1" begin="3600" end="3900" probability="0.04" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway13" type="typedist1" begin="3600" end="3900" probability="0.0001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp13" type="typedist1" begin="3600" end="3900" probability="0.0001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway14" type="typedist1" begin="3900" end="4200" probability="0.033" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway14" type="typedist1" begin="3900" end="4200" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp14" type="typedist1" begin="3900" end="4200" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+
+    <flow id="AV_highway15" type="typedist1" begin="4200" end="4500" probability="0.026" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway15" type="typedist1" begin="4200" end="4500" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp15" type="typedist1" begin="4200" end="4500" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway16" type="typedist1" begin="4500" end="4800" probability="0.025" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway16" type="typedist1" begin="4500" end="4800" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp16" type="typedist1" begin="4500" end="4800" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway17" type="typedist1" begin="4800" end="5100" probability="0.04" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway17" type="typedist1" begin="4800" end="5100" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp17" type="typedist1" begin="4800" end="5100" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+
+
+    <flow id="AV_highway18" type="typedist1" begin="5100" end="5400" probability="0.045" departPos="0" departSpeed="30" latLow="0" latHigh="1" route="main_highway">
+    </flow>
+
+    <flow id="AV_on_ramp_highway18" type="typedist1" begin="5100" end="5400" probability="0.001" departPos="0" departLane="0" departSpeed="25" latLow="0" latHigh="1" route="on_ramp_to_highway">
+    </flow>
+
+    <flow id="AV_highway_off_ramp18" type="typedist1" begin="5100" end="5400" probability="0.001" departPos="0" departSpeed="30" latLow="0" latHigh="0.2" route="exit_from_off_ramp">
+    </flow>
+
+</routes>
