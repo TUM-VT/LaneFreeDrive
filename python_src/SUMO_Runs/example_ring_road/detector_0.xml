@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<detector xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/det_e1_file.xsd">
-    <interval begin="0.00" end="0.25" id="detector_0" nVehContrib="0" flow="0.00" occupancy="1900.00" speed="-1.00" harmonicMeanSpeed="-1.00" length="-1.00" nVehEntered="19"/>
-</detector>
