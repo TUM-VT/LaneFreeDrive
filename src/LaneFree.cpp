@@ -16,6 +16,7 @@
 #include "PotentialLines.h"
 #include "AdaptivePotentialLines.h"
 #include "StripBasedHuman.h"
+#include "Flocking.h"
 #define DEFINE_VARIABLES
 
 #ifdef __unix__
@@ -215,6 +216,7 @@ void simulation_initialize() {
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["AdaptivePotentialLines"] = new AdaptivePotentialLines(config);
+	strategies["Flocking"] = new Flocking(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
 
 	// File to store collisions
