@@ -16,6 +16,7 @@
 #include "PotentialLines.h"
 #include "AdaptivePotentialLines.h"
 #include "StripBasedHuman.h"
+#include "StripBasedHumanNew.h"
 #define DEFINE_VARIABLES
 
 #ifdef __unix__
@@ -216,6 +217,7 @@ void simulation_initialize() {
 	strategies["PotentialLines"] = new PotentialLines(config);
 	strategies["AdaptivePotentialLines"] = new AdaptivePotentialLines(config);
 	strategies["StripBasedHuman"] = new StripBasedHuman(config);
+	strategies["StripBasedHumanNew"] = new StripBasedHumanNew(config);
 
 	// File to store collisions
 	auto gen_config = config["General Parameters"];
