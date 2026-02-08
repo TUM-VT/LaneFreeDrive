@@ -18,58 +18,66 @@ using std::string;
 using std::vector;
 using std::tuple;
 
-EdgeStripsNew::EdgeStripsNew(NumericalID edge_id, double edge_width, double strip_width) {
-	this->edge_id = edge_id;
+
+NetworkStrips::NetworkStrips(double strip_width) {
+	NumericalID* all_edges = get_all_edges();
+	NumericalID n_edges = get_all_edges_size();
+	for (int i = 0; i < n_edges; i++) {
+		NumericalID edge_id = all_edges[i];
+		double width = get_edge_width(edge_id);
+		edge_widths[edge_id] = width;
+		edge_strip_counts[edge_id] = floor(width / strip_width);
+	}
 	this->strip_width = strip_width;
-	this->edge_width = edge_width;
-	total_strips = floor(edge_width / strip_width);
 }
 
-StripInfoNew EdgeStripsNew::getVehicleStripInfo(Car* car) {
-	return carOccupancyMap[car];
+void NetworkStrips::addStripsForNewCar(Car* car) {
+	if (carAssignedStrip.find(car) == carAssignedStrip.end()) {
+		NumericalID edge = car->getCurrentEdge();
+		double y = car->getY() - car->getWidth() / 2.0;
+		int strip_inx = floor(y / strip_width);
+		strip_inx = std::min(strip_inx, edge_strip_counts[edge] - 1);
+		carAssignedStrip[car] = std::make_tuple(edge, strip_inx);
+	}
 }
 
-double EdgeStripsNew::getYFromInx(int index) {
-	if (index > total_strips) {
+double NetworkStrips::getYFromInx(NumericalID edge, int index) {
+	if (index > edge_strip_counts[edge]) {
 		throw std::invalid_argument("received out of index value for strip");
 	}
 	return strip_width * index;
 }
 
-tuple<int, int> EdgeStripsNew::calculateStripInx(Car* car) {
-	double lower_bound = car->getY() - car->getWidth() / 2.0;
-	double upper_bound = car->getY() + car->getWidth() / 2.0;
-	int main_strip_inx = floor(lower_bound / strip_width);
-	if (main_strip_inx < 0) {
-		main_strip_inx = 0;
+int NetworkStrips::getInxFromY(NumericalID edge, double y) {
+	int strip_inx = floor(y / strip_width);
+	if (strip_inx < 0 || strip_inx > edge_strip_counts[edge]) {
+		throw std::invalid_argument("received out of index value for strip");
 	}
-	int num_occupied = ceil(upper_bound / strip_width) - main_strip_inx;
-	return std::make_tuple(main_strip_inx, num_occupied);
+	return strip_inx;
 }
 
-void EdgeStripsNew::updateOccupiedMap(std::map<NumericalID, Car*>& carsMap) {
-	carOccupancyMap.clear();
-	NumericalID n_edge_ids = get_all_ids_in_edge_size(edge_id);
-	NumericalID* ids_in_edge = get_all_ids_in_edge(edge_id);
-
-	for (int j = 0; j < n_edge_ids; j++) {
-		Car* ego = carsMap[ids_in_edge[j]];
-		StripInfoNew strip_info;
-		auto [mainInx, upperInx] = calculateStripInx(ego);
-		strip_info.mainInx = mainInx;
-		strip_info.numOccupied = upperInx;
-		carOccupancyMap[ego] = strip_info;
+void NetworkStrips::shiftAssignedStrip(Car* car, int delta_strip) {
+	auto [edge, strip_inx] = carAssignedStrip[car];
+	int new_strip_inx = strip_inx + delta_strip;
+	if (new_strip_inx < 0 || new_strip_inx > edge_strip_counts[edge]) {
+		throw std::invalid_argument("received out of index value for strip");
 	}
+	carAssignedStrip[car] = std::make_tuple(edge, new_strip_inx);
+}
+
+int NetworkStrips::calculateStripLimit(Car* car) {
+	auto [assigned_edge, strip_inx] = carAssignedStrip[car];
+	double edge_width = edge_widths[assigned_edge];
+	double max_y = edge_width - car->getWidth();
+	int max_strip = floor(max_y / strip_width);
+	return max_strip;
 }
 
 void StripBasedHumanNew::update() {
-	NumericalID* edges = get_all_edges();
-	NumericalID n_edges = get_all_edges_size();
-
-	for (int i = 0; i < n_edges; i++) {
-		NumericalID edge_id = edges[i];
-		edgeStrips[edge_id]->updateOccupiedMap(carsMap);
+	for (auto& [car_id, car] : carsMap) {
+		network_strips.addStripsForNewCar(car);
 	}
+	
 }
 
 StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
@@ -100,15 +108,7 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 		StripsChangeFile.open(file_path);
 		StripsChangeFile << "Time,Vehicle,From,To,Willingness Right,Willingness Left\n";
 	}
-
-	NumericalID* all_edges = get_all_edges();
-	int num_edges = get_all_edges_size();
-	for (int i = 0; i < num_edges; i++) {
-		NumericalID edge_id = all_edges[i];
-		double width = get_edge_width(edge_id);
-		EdgeStripsNew* strip_edge = new EdgeStripsNew(edge_id, width, StripWidth);
-		edgeStrips[edge_id] = strip_edge;
-	}
+	network_strips = NetworkStrips(StripWidth);
 }
 
 double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double gap) {
@@ -127,76 +127,90 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 	return vsafe;
 }
 
+Car* StripBasedHumanNew::calculateLeader(Car* ego, std::vector<Car*> front_neighbors) {
+	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0;
+	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0;
+	Car* leader = nullptr;
+	for (Car* car : front_neighbors) {
+		double delta_x = car->getX() - ego->getX();
+		double lower_car_y = car->getY() - car->getWidth() / 2.0;
+		double upper_car_y = car->getY() + car->getWidth() / 2.0;
+
+		if (std::max(lower_ego_y, lower_car_y) < std::min(upper_ego_y, upper_car_y)) {
+			leader = car;
+			break;
+		}
+	}
+	return leader;
+}
+
 std::unordered_map<int, tuple<double, Car*>> StripBasedHumanNew::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
-	EdgeStripsNew* strip = edgeStrips[ego->getCurrentEdge()];
-	vector<int> indices(strip->getTotalNoStrips());
-	std::iota(indices.begin(), indices.end(), 0);
-	int numocc = strip->getVehicleStripInfo(ego).numOccupied;
+
+	NumericalID ego_edge = ego->getCurrentEdge();
+	int edge_strips_count = network_strips.getStripsCount(ego_edge);
+	int ego_lw_strip = network_strips.getAssignedStripInx(ego);
+	int ego_up_strip = network_strips.getInxFromY(ego_edge, ego->getY() + ego->getWidth() / 2.0) + 1;
+	int numocc = ego_up_strip - ego_lw_strip;
 	int count_indices = 0;
 
 	std::unordered_map<int, tuple<double, Car*>> safe_velocity_map;
-	safe_velocity_map.reserve(indices.size());
-	for (int i : indices) {
+	safe_velocity_map.reserve(edge_strips_count);
+	for (int i = 0; i < edge_strips_count; i++) {
 		safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
 	}
 
 	for (Car* car : front_cars) {
-		StripInfoNew info = strip->getVehicleStripInfo(carsMap[car->getNumId()]);
-		int car_lw = info.mainInx - 2;
-		int car_up = car_lw + info.numOccupied - 1 + 2;
+		int car_lw_inx = network_strips.getInxFromY(ego_edge, car->getY() - car->getWidth() / 2.0);
+		int car_up_inx = network_strips.getInxFromY(ego_edge, car->getY() + car->getWidth() / 2.0);
+		car_up_inx += 1;
 
-		int overlap_lower = std::max(car_lw - numocc - 1, 0);
-		int overlap_upper = std::min(car_up + 1, (int)indices.size() - 1);
-		double gap = car->getCircularX() - car->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
-		double safe_vels = calculateSafeVelocity(ego, car, gap);
+		int overlap_lower = std::max(car_lw_inx - numocc, 0);
+		int overlap_upper = std::min(car_up_inx, edge_strips_count - 1);
+
+		double gap = ego->getRelativeDistanceX(car) - car->getLength() / 2.0 - ego->getLength() / 2.0;
+		double safe_vel = calculateSafeVelocity(ego, car, gap);
 		if (gap < 0) {
-			safe_vels = 0;
+			safe_vel = 0;
 		}
+
 		for (int k = overlap_lower; k <= overlap_upper; k++) {
-			if (std::get<1>(safe_velocity_map[k]) == nullptr){
+			if (std::get<1>(safe_velocity_map[k]) == nullptr) {
 				count_indices++;
-				safe_velocity_map[k] = std::make_tuple(safe_vels, car);
+				safe_velocity_map[k] = std::make_tuple(safe_vel, car);
 			}
 		}
-		if (count_indices == indices.size()) {
+		if (count_indices == edge_strips_count) {
 			break;
 		}
 	}
 	return safe_velocity_map;
 }
 
-void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<int, tuple<double, Car*>> safeVelMap) {
-	EdgeStripsNew* ego_strip = edgeStrips[ego->getCurrentEdge()];
-	StripInfoNew ego_strip_info = ego_strip->getVehicleStripInfo(ego);
-	int total_strips = ego_strip->getTotalNoStrips();
-	double vel_max = get_desired_speed(ego->getNumId());
+void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<int, tuple<double, Car*>> safeVelMap, double vsafe_current) {
+	int total_strips = network_strips.getStripsCount(ego->getCurrentEdge());
+	int current_strip = network_strips.getAssignedStripInx(ego);
+	int upper_current_strip = network_strips.getInxFromY(ego->getCurrentEdge(), ego->getY() + ego->getWidth() / 2.0) + 1;
+	int numOccupied = upper_current_strip - current_strip;
 
-	double vsafe_current = vel_max;
-	int main_inx = ego_strip_info.mainInx;
-	auto [vsafe, car] = safeVelMap[main_inx];
-	if (car != nullptr) {
-		vsafe_current = vsafe;
-	}
+	int left_most = std::min(current_strip + (int)numStripsConsidered, total_strips - 1);
+	int right_most = std::max(current_strip - (int)numStripsConsidered, 0);
 
-	int left_most = std::min(main_inx + (int)numStripsConsidered, total_strips - 1);
-	int right_most = std::max(main_inx - (int)numStripsConsidered, 0);
-	
 	double right = 0;
 	double left = 0;
-	for (int inx = right_most; inx < left_most+1; inx++) {
-		double vsafe_neighbour = vel_max;
+	for (int inx = right_most; inx < left_most + 1; inx++) {
+		double vsafe_neighbour = ego->getDesiredSpeed();
 		auto [vsafe, car] = safeVelMap[inx];
 		if (car != nullptr) {
 			vsafe_neighbour = vsafe;
 		}
 
-		double diff_inx = std::abs(main_inx - inx);
-		double benefit = ((vsafe_neighbour - vsafe_current) / vel_max) * std::exp(-Lambda * diff_inx);
-		if (inx < main_inx) { 
-			right += benefit; 
+		double diff_inx = std::abs(current_strip - inx);
+		double benefit = ((vsafe_neighbour - vsafe_current) / ego->getDesiredSpeed()) * std::exp(-Lambda * diff_inx);
+		if (inx < current_strip) {
+			right += benefit;
 		}
-		else if (inx > main_inx) { 
-			left += benefit; 
+		else if (inx > current_strip) {
+			left += benefit;
 		}
 	}
 
@@ -220,10 +234,10 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 	}
 
 	// If the driver is on the edges of the road, then set the corresponding driver memory to 0
-	if (ego_strip_info.mainInx <= 1) {
+	if (current_strip <= 1) {
 		driverMemory[ego][1] = 0;
 	}
-	else if (ego_strip_info.mainInx + ego_strip_info.numOccupied >= total_strips) {
+	else if (current_strip + numOccupied >= total_strips) {
 		driverMemory[ego][0] = 0;
 	}
 
@@ -262,39 +276,23 @@ bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Ca
 	return sufficient_gap;
 }
 
-bool StripBasedHumanNew::isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStripsNew* strip) {
-	double y = strip->getYFromInx(strip_inx);
-	double car_width = car->getWidth();
-	double road_width = strip->getEdgeWidth();
-	bool violation = false;
-	if (y < 0 || (y + car_width > road_width)) {
-		violation = true;
-	}
-	return violation;
-}
-
 
 tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	vector<Car*> front_cars = getNeighbours(ego, FrontDistance);
 	vector<Car*> back_cars = getNeighbours(ego, -FrontDistance);
 
-	EdgeStripsNew* ego_strip = edgeStrips[ego->getCurrentEdge()];
-	StripInfoNew ego_strip_info = ego_strip->getVehicleStripInfo(ego);
-
-	std::unordered_map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
-
 	/* Calculate the longitudinal acceleration */
-	auto [vsafe_x, leader] = safe_vel_map[ego_strip_info.mainInx];
-
-	double desired_speed = get_desired_speed(ego->getNumId());
+	double desired_speed = ego->getDesiredSpeed();
 	double time_step = get_time_step_length();
-	// The max velocity possible in the next time step
-	double max_vel_x = ego->getSpeedX() + time_step * Accelerate;
 
-	double next_vel_x = std::min(desired_speed, max_vel_x);
+	Car* leader = calculateLeader(ego, front_cars);
+	double vsafe_x{ desired_speed }, gap;
 	if (leader != nullptr) {
-		next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
+		gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
+		vsafe_x = calculateSafeVelocity(ego, leader, gap);
 	};
+	double max_vel_x = ego->getSpeedX() + time_step * Accelerate;		// The max velocity possible in the next time step
+	double next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
 	
 	double diff_vel_x = next_vel_x - ego->getSpeedX();
 	double ax = 0;
@@ -303,7 +301,6 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 		// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
 		if (leader != nullptr) {
 			double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
-			double gap = leader->getX() - leader->getLength() / 2.0 - (ego->getX() + ego->getLength() / 2.0);
 			if (gap < brake_distance) {
 				ax = -std::min({ std::abs(diff_vel_x / time_step), MaxBrakeDeceleration });
 			}
@@ -313,34 +310,43 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 		ax = std::min(diff_vel_x / time_step, Accelerate);
 	}
 
+	std::unordered_map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
+
 	/* Calculate lateral acceleration */
-	updateStripChangeBenefit(ego, safe_vel_map);
+	updateStripChangeBenefit(ego, safe_vel_map, vsafe_x);
 
 	double left_benefit = driverMemory[ego][0];
 	double right_benefit = driverMemory[ego][1];
 
+	int current_strip = network_strips.getAssignedStripInx(ego);
+	double target_y = network_strips.getYFromInx(ego->getCurrentEdge(), current_strip);
+	NumericalID ego_edge = ego->getCurrentEdge();
+
 	double ay = - ego->getSpeedY() / time_step;
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
-		double new_y = ego_strip->getYFromInx(ego_strip_info.mainInx + delta_inx);
-		double diff_y = new_y - (ego->getY() - ego->getWidth() / 2);
+		if (current_strip + delta_inx <= network_strips.calculateStripLimit(ego)) {
 
-		double req_speed_y = diff_y / time_step;
-		double speed_diff = req_speed_y - ego->getSpeedY();
-		ay = speed_diff / time_step;
+			double new_y = network_strips.getYFromInx(ego_edge, current_strip + delta_inx) + ego->getWidth() / 2.0;
+			double diff_y = new_y - ego->getY();
 
-		// Check if the lane change is possible
-		if (ay != 0) {
-			double new_x = ego->getX() + next_vel_x * time_step;
-			bool boundary_cross = isCrossingRoadBoundary(ego, ego_strip_info.mainInx + delta_inx, ego_strip);
-			bool sufficient_gap = isSufficientGap(ego, new_x, new_y, front_cars, back_cars);
-			if (boundary_cross || !sufficient_gap) {
-				ay = -ego->getSpeedY() / time_step;
-			}
-			else {
-				if (StripsChangeFile.is_open()) {
-					double time = get_time_step_length() * get_current_time_step();
-					StripsChangeFile << time << "," << ego->getVehName() << "," << ego_strip_info.mainInx << "," << ego_strip_info.mainInx + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
+			double req_speed_y = diff_y / time_step;
+			double speed_diff = req_speed_y - ego->getSpeedY();
+			ay = speed_diff / time_step;
+
+			// Check if the lane change is possible
+			if (ay != 0) {
+				double new_x = ego->getX() + next_vel_x * time_step;
+				bool sufficient_gap = isSufficientGap(ego, new_x, new_y, front_cars, back_cars);
+				if (!sufficient_gap) {
+					ay = -ego->getSpeedY() / time_step;
+				}
+				else {
+					network_strips.shiftAssignedStrip(ego, delta_inx);
+					if (StripsChangeFile.is_open()) {
+						double time = get_time_step_length() * get_current_time_step();
+						StripsChangeFile << time << "," << ego->getVehName() << "," << current_strip << "," << current_strip + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
+					}
 				}
 			}
 		}

@@ -15,29 +15,24 @@
 #include <fstream>
 #include <unordered_map>
 
-typedef struct
-{
-	int mainInx = 0;
-	int numOccupied = 0;
-}StripInfoNew;
-
-class EdgeStripsNew {
+class NetworkStrips {
 public:
-	EdgeStripsNew(NumericalID edge_id, double edge_width, double strip_width);
-	void updateOccupiedMap(std::map<NumericalID, Car*>& carsMap);
-	StripInfoNew getVehicleStripInfo(Car* car);
-	int getTotalNoStrips() { return total_strips; }
-	double getYFromInx(int index);
-	double getEdgeWidth() { return edge_width; }
+	NetworkStrips() {};
+	NetworkStrips(double strip_width);
+	void addStripsForNewCar(Car* car);
+	double getYFromInx(NumericalID edge, int index);
+	int getInxFromY(NumericalID edge, double y);
+	void shiftAssignedStrip(Car* car, int delta_strip);
+	int calculateStripLimit(Car* car);
+
+	double getStripsCount(NumericalID edge) { return edge_strip_counts[edge]; }
+	int getAssignedStripInx(Car* car) { return std::get<1>(carAssignedStrip[car]); }
 
 private:
-	NumericalID edge_id;
-	double edge_width;
 	double strip_width;
-	int total_strips;
-	std::map<Car*, StripInfoNew> carOccupancyMap;
-	std::tuple<int, int> calculateStripInx(Car* car);
-	
+	std::map<Car*, std::tuple<NumericalID, int>> carAssignedStrip;
+	std::map<NumericalID, int> edge_strip_counts;
+	std::map<NumericalID, double> edge_widths;
 };
 
 class StripBasedHumanNew : public LFTStrategy {
@@ -60,20 +55,19 @@ private:
 	double Lambda;
 	double numStripsConsidered;
 	std::ofstream StripsChangeFile;
-	std::map<Car*, StripInfoNew> occupancyMap;
 	std::map<Car*, std::vector<double>> driverMemory;
-	std::map<NumericalID, EdgeStripsNew*> edgeStrips;
 	std::map<Car*, double> ReactionTimesMap;
 	std::mt19937 rng;
 	std::normal_distribution<double> reaction_distribution;
+	NetworkStrips network_strips;
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
-	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap);
+	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
+
+	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
 
 	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> front_cars, std::vector<Car*> back_cars);
-
-	bool isCrossingRoadBoundary(Car* car, int strip_inx, EdgeStripsNew* strip);
 
 	// Calculate the safe velocity for the ego vehicle with the leader at a certain gap
 	double calculateSafeVelocity(Car* ego, Car* leader, double gap);
