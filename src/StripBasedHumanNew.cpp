@@ -50,7 +50,7 @@ double NetworkStrips::getYFromInx(Car* car, int index) {
 	if (index > boundary_strip_counts[car]) {
 		throw std::invalid_argument("received out of index value for the boundaries of car");
 	}
-	return strip_width * index;
+	return strip_width * index + zero_strip_y[car];
 }
 
 int NetworkStrips::getInxFromY(Car* car, double y) {
