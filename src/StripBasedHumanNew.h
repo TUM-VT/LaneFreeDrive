@@ -19,20 +19,21 @@ class NetworkStrips {
 public:
 	NetworkStrips() {};
 	NetworkStrips(double strip_width);
-	void addStripsForNewCar(Car* car);
-	double getYFromInx(NumericalID edge, int index);
-	int getInxFromY(NumericalID edge, double y);
+	void update(Car* car);
+	double getYFromInx(Car* car, int index);
+	int getInxFromY(Car* car, double y);
 	void shiftAssignedStrip(Car* car, int delta_strip);
 	int calculateStripLimit(Car* car);
 
-	double getStripsCount(NumericalID edge) { return edge_strip_counts[edge]; }
-	int getAssignedStripInx(Car* car) { return std::get<1>(carAssignedStrip[car]); }
+	double getStripsCount(Car* car) { return boundary_strip_counts[car]; }
+	int getAssignedStripInx(Car* car) { return carAssignedStrip[car]; }
 
 private:
 	double strip_width;
-	std::map<Car*, std::tuple<NumericalID, int>> carAssignedStrip;
-	std::map<NumericalID, int> edge_strip_counts;
-	std::map<NumericalID, double> edge_widths;
+	std::map<Car*, int> carAssignedStrip;
+	std::map<Car*, double> boundary_widths;
+	std::map<Car*, int> boundary_strip_counts;
+	std::map<Car*, double> zero_strip_y;
 };
 
 class StripBasedHumanNew : public LFTStrategy {
