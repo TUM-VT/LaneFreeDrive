@@ -100,6 +100,8 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	else {
 		ReactionTime = stod(secParam["ReactionTime"]);
 	}
+	k1 = stod(secParam["k1"]);
+	k2 = stod(secParam["k2"]);
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
@@ -324,38 +326,24 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	double right_benefit = driverMemory[ego][1];
 
 	int current_strip = network_strips.getAssignedStripInx(ego);
-	double target_y = network_strips.getYFromInx(ego, current_strip);
-	NumericalID ego_edge = ego->getCurrentEdge();
+	double target_y = network_strips.getYFromInx(ego, current_strip) + ego->getWidth() / 2.0;
 
-	double ay = - ego->getSpeedY() / time_step;
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
 		if (current_strip + delta_inx <= network_strips.calculateStripLimit(ego)) {
 
 			double new_y = network_strips.getYFromInx(ego, current_strip + delta_inx) + ego->getWidth() / 2.0;
-			double diff_y = new_y - ego->getY();
-
-			double req_speed_y = diff_y / time_step;
-			double speed_diff = req_speed_y - ego->getSpeedY();
-			ay = speed_diff / time_step;
-
-			// Check if the lane change is possible
-			if (ay != 0) {
-				double new_x = ego->getX() + next_vel_x * time_step;
-				bool sufficient_gap = isSufficientGap(ego, new_x, new_y, front_cars, back_cars);
-				if (!sufficient_gap) {
-					ay = -ego->getSpeedY() / time_step;
-				}
-				else {
-					network_strips.shiftAssignedStrip(ego, delta_inx);
-					if (StripsChangeFile.is_open()) {
-						double time = get_time_step_length() * get_current_time_step();
-						StripsChangeFile << time << "," << ego->getVehName() << "," << current_strip << "," << current_strip + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
-					}
+			if (isSufficientGap(ego, ego->getX(), new_y, front_cars, back_cars)) {
+				target_y = new_y;
+				network_strips.shiftAssignedStrip(ego, delta_inx);
+				if (StripsChangeFile.is_open()) {
+					double time = get_time_step_length() * get_current_time_step();
+					StripsChangeFile << time << "," << ego->getVehName() << "," << current_strip << "," << current_strip + delta_inx << "," << right_benefit << "," << left_benefit << "\n";
 				}
 			}
 		}
 	}
+	double ay = -k1 * (ego->getY() - target_y) - k2 * ego->getSpeedY();
 
 	return std::make_tuple(ax, ay);
 }

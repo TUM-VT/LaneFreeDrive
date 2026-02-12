@@ -55,6 +55,7 @@ private:
 	double LaneChangeThreshold;
 	double Lambda;
 	double numStripsConsidered;
+	double k1, k2;
 	std::ofstream StripsChangeFile;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<Car*, double> ReactionTimesMap;
