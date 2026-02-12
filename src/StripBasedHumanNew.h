@@ -18,7 +18,7 @@
 class NetworkStrips {
 public:
 	NetworkStrips() {};
-	NetworkStrips(double strip_width);
+	NetworkStrips(double strip_width, double look_ahead_distance);
 	void update(Car* car);
 	double getYFromInx(Car* car, int index);
 	int getInxFromY(Car* car, double y);
@@ -29,7 +29,7 @@ public:
 	int getAssignedStripInx(Car* car) { return carAssignedStrip[car]; }
 
 private:
-	double strip_width;
+	double strip_width, look_ahead_distance;
 	std::map<Car*, int> carAssignedStrip;
 	std::map<Car*, double> boundary_widths;
 	std::map<Car*, int> boundary_strip_counts;

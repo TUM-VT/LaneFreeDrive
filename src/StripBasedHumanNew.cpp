@@ -19,14 +19,15 @@ using std::vector;
 using std::tuple;
 
 
-NetworkStrips::NetworkStrips(double strip_width) {
+NetworkStrips::NetworkStrips(double strip_width, double look_ahead_distance) {
 	this->strip_width = strip_width;
+	this->look_ahead_distance = look_ahead_distance;
 }
 
 void NetworkStrips::update(Car* car) {
 	// For simplicity, strips are calculated according to the road boundaries which can be different from the actual road boundaries.
 	// This assumes that the first strip starts at the lateral location of the the right most boundary.
-	auto [left_boundary_dist, right_boundary_dist] = car->calDistanceToBoundary(0, 0);
+	auto [left_boundary_dist, right_boundary_dist] = car->calDistanceToBoundary(look_ahead_distance, 0);
 	boundary_widths[car] = left_boundary_dist + right_boundary_dist;
 	boundary_strip_counts[car] = floor((left_boundary_dist + right_boundary_dist) / strip_width);
 	// also track the lateral location of the zero strip relative to the right side of the current edge.
@@ -113,7 +114,7 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 		StripsChangeFile.open(file_path);
 		StripsChangeFile << "Time,Vehicle,From,To,Willingness Right,Willingness Left\n";
 	}
-	network_strips = NetworkStrips(StripWidth);
+	network_strips = NetworkStrips(StripWidth, stod(secParam["StripsLookAheadDistance"]));
 }
 
 double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double gap) {
