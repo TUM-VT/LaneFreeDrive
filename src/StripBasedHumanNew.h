@@ -65,11 +65,11 @@ private:
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
-	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
+	Car* calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors);
 
 	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
 
-	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> front_cars, std::vector<Car*> back_cars);
+	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> neighbours);
 
 	// Calculate the safe velocity for the ego vehicle with the leader at a certain gap
 	double calculateSafeVelocity(Car* ego, Car* leader, double gap);

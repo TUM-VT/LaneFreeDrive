@@ -135,12 +135,11 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 	return vsafe;
 }
 
-Car* StripBasedHumanNew::calculateLeader(Car* ego, std::vector<Car*> front_neighbors) {
+Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors) {
 	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0;
 	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0;
 	Car* leader = nullptr;
-	for (Car* car : front_neighbors) {
-		double delta_x = car->getX() - ego->getX();
+	for (Car* car : neighbors) {
 		double lower_car_y = car->getY() - car->getWidth() / 2.0;
 		double upper_car_y = car->getY() + car->getWidth() / 2.0;
 
@@ -250,39 +249,29 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 
 }
 
-bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> front_cars, vector<Car*> back_cars) {
-	double delta_t = get_time_step_length();
-	double ego_nextx = ego->getX() + delta_t * ego->getSpeedX();
-
-	double ego_lw_x = x - ego->getLength() / 2.0;
-	double ego_up_x = x + ego->getLength() / 2.0;
-	double ego_lw_y = y - ego->getWidth() / 2.0;
-	double ego_up_y = y + ego->getWidth() / 2.0;
+bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> neighbours) {
 
 	bool sufficient_gap = true;
-	for (vector<Car*> neighbours : { front_cars, back_cars }) {
-		for (Car* car : neighbours) {
-			if (std::abs(ego->getX() - car->getX()) > 3 * ego->getLength()) {
-				break;
-			}
+	Car* overlap_car = calculateFirstLateralOverlap(ego, neighbours);
+	if (overlap_car != nullptr) {
+		double diff_vel_x = ego->getSpeedX() - overlap_car->getSpeedX();
+		double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
+		double gap;
+		if (overlap_car->getRelativeDistanceX(ego) > 0) {
+			gap = overlap_car->getRelativeDistanceX(ego);
+		}
+		else {
+			gap = ego->getRelativeDistanceX(overlap_car);
+		}
+		gap = gap - overlap_car->getLength() / 2.0 - ego->getLength() / 2.0;
 
-			double car_lw_x = car->getCircularX() + delta_t * car->getSpeedX() - car->getLength() / 2.0;
-			double car_up_x = car->getCircularX() + delta_t * car->getSpeedX() + car->getLength() / 2.0;
-
-			if ((ego_lw_x <= car_lw_x && car_lw_x <= ego_up_x) || (ego_lw_x <= car_up_x && car_up_x <= ego_up_x) 
-				|| (car_lw_x <= ego_lw_x && ego_lw_x <= car_up_x) || (car_lw_x <= ego_up_x && ego_up_x <= car_up_x)) {
-				double car_lw_y = car->getY() + delta_t * car->getSpeedY() - 1.2 * car->getWidth() / 2.0;
-				double car_up_y = car->getY() + delta_t * car->getSpeedY() + 1.2 * car->getWidth() / 2.0;
-				if ((ego_lw_y <= car_lw_y && car_lw_y <= ego_up_y) || (ego_lw_y <= car_up_y && car_up_y <= ego_up_y)) {
-					sufficient_gap = false;
-					break;
-				}
-			}
+		if (gap < brake_distance) {
+			sufficient_gap = false;
 		}
 	}
 	return sufficient_gap;
-}
 
+}
 
 tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	vector<Car*> front_cars = getNeighbours(ego, FrontDistance);
@@ -292,7 +281,7 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	double desired_speed = ego->getDesiredSpeed();
 	double time_step = get_time_step_length();
 
-	Car* leader = calculateLeader(ego, front_cars);
+	Car* leader = calculateFirstLateralOverlap(ego, front_cars);
 	double vsafe_x{ desired_speed }, gap;
 	if (leader != nullptr) {
 		gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
@@ -333,7 +322,9 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 		if (current_strip + delta_inx <= network_strips.calculateStripLimit(ego)) {
 
 			double new_y = network_strips.getYFromInx(ego, current_strip + delta_inx) + ego->getWidth() / 2.0;
-			if (isSufficientGap(ego, ego->getX(), new_y, front_cars, back_cars)) {
+			bool is_sufficient_gap_front = isSufficientGap(ego, ego->getX(), new_y, front_cars);
+			bool is_sufficient_gap_back = isSufficientGap(ego, ego->getX(), new_y, back_cars);
+			if (is_sufficient_gap_front && is_sufficient_gap_back) {
 				target_y = new_y;
 				network_strips.shiftAssignedStrip(ego, delta_inx);
 				if (StripsChangeFile.is_open()) {
