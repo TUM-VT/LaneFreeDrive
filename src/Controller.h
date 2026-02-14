@@ -31,6 +31,8 @@ public:
 	std::map<std::string, std::map<std::string, std::string>> extractModelSpecificParams(iniMap config, std::string prefix);
 	// Splits a string s by the delimiter
 	static std::vector<std::string> splitString(const std::string& s, std::string delimiter);
+	std::vector<std::string> getOnRampEdges() { return on_ramp_edges; }
+	std::vector<std::string> getOffRampEdges() { return off_ramp_edges; }
 
 protected:
 	std::map<NumericalID, Car*> carsMap;

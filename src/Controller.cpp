@@ -174,15 +174,23 @@ Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies)
 			}
 		}
 	}
-
-	auto ramp_info = config["Ramp Information"];
-	if (vehName.find(ramp_info["on_ramp_veh_ident_key"]) != std::string::npos) {
-		isOnRampVeh = true;
+	std::string destination_edge = get_edge_name(get_destination_edge_id(numID));
+	std::vector<std::string> off_ramp_edges = lftstrategy->getOffRampEdges();
+	for (std::string edge : off_ramp_edges) {
+		if (destination_edge.compare(edge) == 0) {
+			isOffRampVeh = true;
+			break;
+		}
 	}
-	if (vehName.find(ramp_info["off_ramp_veh_ident_key"]) != std::string::npos) {
-		isOffRampVeh = true;
-	}
 
+	std::string origin_edge = get_edge_name(get_origin_edge_id(numID));
+	std::vector<std::string> on_ramp_edges = lftstrategy->getOnRampEdges();
+	for (std::string edge : on_ramp_edges) {
+		if (origin_edge.compare(edge) == 0) {
+			isOnRampVeh = true;
+			break;
+		}
+	}
 }
 
 Car::Car(const Car& car) {
