@@ -26,6 +26,7 @@ public:
 	int calculateStripLimit(Car* car);
 
 	double getStripsCount(Car* car) { return boundary_strip_counts[car]; }
+	double getBoundaryWidth(Car* car) { return boundary_widths[car]; }
 	int getAssignedStripInx(Car* car) { return carAssignedStrip[car]; }
 
 private:
@@ -56,6 +57,7 @@ private:
 	double Lambda;
 	double numStripsConsidered;
 	double k1, k2;
+	double off_ramp_desire_mid_point, off_ramp_desire_spread, off_ramp_desire_lambda;
 	std::ofstream StripsChangeFile;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<Car*, double> ReactionTimesMap;

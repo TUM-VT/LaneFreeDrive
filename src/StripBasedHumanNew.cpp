@@ -102,6 +102,9 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	}
 	k1 = stod(secParam["k1"]);
 	k2 = stod(secParam["k2"]);
+	off_ramp_desire_mid_point = stod(secParam["off_ramp_desire_mid_point"]);
+	off_ramp_desire_spread = stod(secParam["off_ramp_desire_spread"]);
+	off_ramp_desire_lambda = stod(secParam["off_ramp_desire_lambda"]);
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
@@ -217,6 +220,17 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 		}
 		else if (inx > current_strip) {
 			left += benefit;
+		}
+	}
+
+	// If it is an off-ramp vehicle, then add additional benefit to the right side
+	if (ego->getIfOffRampVeh()) {
+		double dist_to_off_ramp = ego->calDistanceToRampEnd();
+		if (dist_to_off_ramp > -1) {
+			double benefit = 1 / (1 + std::exp(off_ramp_desire_lambda * (dist_to_off_ramp - off_ramp_desire_mid_point) / off_ramp_desire_spread));
+			double lateral_ratio = ego->getY() / (network_strips.getBoundaryWidth(ego) - ego->getWidth());
+			benefit = LaneChangeThreshold * lateral_ratio * benefit;
+			right += benefit;
 		}
 	}
 
