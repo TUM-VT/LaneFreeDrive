@@ -247,6 +247,27 @@ std::tuple<double, double> Car::getGlobalPosition() {
 	return std::make_tuple(get_global_position_x(numID), get_global_position_y(numID));
 }
 
+double Car::calDistanceToRampEnd(){
+	double distance_to_ramp_end = -1;
+	if (isOffRampVeh) {
+		NumericalID next_edge_id = get_next_edge_id(numID);
+		NumericalID destination_edge_id = get_destination_edge_id(numID);
+		if (next_edge_id == -1) {
+			distance_to_ramp_end = getCurrentEdgeLength() - x;
+		}
+		else if (next_edge_id == destination_edge_id) {
+			distance_to_ramp_end = getCurrentEdgeLength() + get_edge_length(destination_edge_id) - x;
+		}
+	}
+	else if (isOnRampVeh) {
+		NumericalID origin_edge_id = get_origin_edge_id(numID);
+		if (origin_edge_id == currentEdge) {
+			distance_to_ramp_end = x;
+		}
+	}
+	return distance_to_ramp_end;
+}
+
 double Car::getCurrentEdgeWidth() {
 	return get_edge_width(currentEdge);
 }

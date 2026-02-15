@@ -61,6 +61,7 @@ public:
 	double getRelativeDistanceX(Car* other);
 	double getRelativeDistanceY(Car* other);
 	std::tuple<double, double> getGlobalPosition();
+	double calDistanceToRampEnd();
 
 	double getWidth() { return width; }
 	double getLength() { return length; }
