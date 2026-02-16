@@ -20,6 +20,7 @@ public:
 	NetworkStrips() {};
 	NetworkStrips(double strip_width, double look_ahead_distance);
 	void update(Car* car);
+	void vehicle_exit(Car* car);
 	double getYFromInx(Car* car, int index);
 	int getInxFromY(Car* car, double y);
 	void shiftAssignedStrip(Car* car, int delta_strip);
@@ -43,6 +44,7 @@ public:
 	StripBasedHumanNew(iniMap config);
 	std::tuple<double, double> calculateAcceleration(Car* ego) override;
 	void update() override;
+	void vehicle_exit(Car* car) override;
 	void finalize_simulation() override;
 
 private:

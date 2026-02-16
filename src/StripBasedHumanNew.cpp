@@ -47,6 +47,13 @@ void NetworkStrips::update(Car* car) {
 	}
 }
 
+void NetworkStrips::vehicle_exit(Car* car) {
+	carAssignedStrip.erase(car);
+	boundary_widths.erase(car);
+	boundary_strip_counts.erase(car);
+	zero_strip_y.erase(car);
+}
+
 double NetworkStrips::getYFromInx(Car* car, int index) {
 	if (index > boundary_strip_counts[car]) {
 		throw std::invalid_argument("received out of index value for the boundaries of car");
@@ -84,6 +91,12 @@ void StripBasedHumanNew::update() {
 		network_strips.update(car);
 	}
 	
+}
+
+void StripBasedHumanNew::vehicle_exit(Car* car) {
+	driverMemory.erase(car);
+	ReactionTimesMap.erase(car);
+	network_strips.vehicle_exit(car);
 }
 
 StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {

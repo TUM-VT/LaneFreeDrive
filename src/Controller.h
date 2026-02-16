@@ -24,6 +24,7 @@ public:
 	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, after calling getNeighbours, use getCircularX of Car to get the corrected x position of the vehicle.
 	std::vector<Car*> getNeighbours(Car* ego, double distance);
 	virtual void update() {};
+	virtual void vehicle_exit(Car* car) {};
 	virtual void finish_time_step() {};
 	static bool isCircular() { return circular; }
 	static void setCircular(iniMap config);

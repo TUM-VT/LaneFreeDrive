@@ -402,6 +402,7 @@ void event_vehicle_enter(NumericalID veh_id) {
 
 void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 	if (has_arrived == 1) {
+		carsMap[veh_id]->getLFTStrategy()->vehicle_exit(carsMap[veh_id]);
 		delete carsMap[veh_id];
 		carsMap.erase(veh_id);
 	}
