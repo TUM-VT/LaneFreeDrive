@@ -297,20 +297,22 @@ void simulation_step() {
 
 	// Record the collisions
 	double current_time = get_time_step_length() * get_current_time_step();
-	std::set<std::tuple<Car*, Car*>> delete_pairs;
-	for (const auto& entry : collisionStartTimes) {
-		auto pair = entry.first;
-		if (collisionPairs.count(pair) == 0) {
-			double start_time = entry.second;
-			auto [car1, car2] = pair;
-			collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
-			delete_pairs.insert(pair);
+	if (collision_file.is_open()) {
+		std::set<std::tuple<Car*, Car*>> delete_pairs;
+		for (const auto& entry : collisionStartTimes) {
+			auto pair = entry.first;
+			if (collisionPairs.count(pair) == 0) {
+				double start_time = entry.second;
+				auto [car1, car2] = pair;
+				collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+				delete_pairs.insert(pair);
+			}
 		}
+		for (const auto& pair : delete_pairs) {
+			collisionStartTimes.erase(pair);
+		}
+		collisionPairs.clear();
 	}
-	for (const auto& pair : delete_pairs) {
-		collisionStartTimes.erase(pair);
-	}
-	collisionPairs.clear();
 
 	// Record the vehicle information in the first time step
 
@@ -402,14 +404,28 @@ void event_vehicle_enter(NumericalID veh_id) {
 
 void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 	if (has_arrived == 1) {
-		carsMap[veh_id]->getLFTStrategy()->vehicle_exit(carsMap[veh_id]);
+		Car* arrived_car = carsMap[veh_id];
+		if (collision_file.is_open()) {
+			std::set<std::tuple<Car*, Car*>> delete_pairs;
+			for (const auto& entry : collisionStartTimes) {
+				auto [car1, car2] = entry.first;
+				if (car1 == arrived_car || car2 == arrived_car) {
+					double current_time = get_time_step_length() * get_current_time_step();
+					double start_time = entry.second;
+					collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+					collisionStartTimes.erase(entry.first);
+					break;
+				}
+			}
+		}
+		arrived_car->getLFTStrategy()->vehicle_exit(arrived_car);
 		delete carsMap[veh_id];
 		carsMap.erase(veh_id);
 	}
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
-	if (carsMap.size() > 0) {
+	if (carsMap.size() > 0 && collision_file.is_open()) {
 		Car* car1 = carsMap[veh_id1];
 		Car* car2 = carsMap[veh_id2];
 		std::tuple<Car*, Car*> combination = std::make_tuple(car1, car2);
