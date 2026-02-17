@@ -313,6 +313,9 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	if (leader != nullptr) {
 		gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 		vsafe_x = calculateSafeVelocity(ego, leader, gap);
+		if (std::isnan(vsafe_x)) {
+			vsafe_x = 0;
+		}
 	};
 	double max_vel_x = ego->getSpeedX() + time_step * Accelerate;		// The max velocity possible in the next time step
 	double next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
