@@ -127,6 +127,7 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	Lambda = stod(secParam["Lambda"]);
 	numStripsConsidered = -std::log(0.01) / Lambda;
 	LaneChangeThreshold = stod(secParam["LaneChangeThreshold"]);
+	lateral_overlap_buffer = stod(secParam["lateral_overlap_buffer"]);
 	string file_path = secParam["StripsChangeFile"];
 	if (file_path.compare("") != 0) {
 		StripsChangeFile.open(file_path);
@@ -152,8 +153,8 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 }
 
 Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors) {
-	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0;
-	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0;
+	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0 - lateral_overlap_buffer;
+	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0 + lateral_overlap_buffer;
 	Car* leader = nullptr;
 	for (Car* car : neighbors) {
 		double lower_car_y = car->getY() - car->getWidth() / 2.0;
