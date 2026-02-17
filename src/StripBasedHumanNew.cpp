@@ -347,14 +347,15 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 
 	int current_strip = network_strips.getAssignedStripInx(ego);
 	double target_y = network_strips.getYFromInx(ego, current_strip) + ego->getWidth() / 2.0;
+	double next_x = ego->getX() + ego->getSpeedX() * time_step + 0.5 * ax * pow(time_step, 2);
 
 	if ((left_benefit > LaneChangeThreshold) || (right_benefit > LaneChangeThreshold)) {
 		int delta_inx = (left_benefit > right_benefit) ? 1 : -1;
 		if (current_strip + delta_inx <= network_strips.calculateStripLimit(ego)) {
 
 			double new_y = network_strips.getYFromInx(ego, current_strip + delta_inx) + ego->getWidth() / 2.0;
-			bool is_sufficient_gap_front = isSufficientGap(ego, ego->getX(), new_y, front_cars);
-			bool is_sufficient_gap_back = isSufficientGap(ego, ego->getX(), new_y, back_cars);
+			bool is_sufficient_gap_front = isSufficientGap(ego, next_x, new_y, front_cars, true);
+			bool is_sufficient_gap_back = isSufficientGap(ego, next_x, new_y, back_cars, false);
 			if (is_sufficient_gap_front && is_sufficient_gap_back) {
 				target_y = new_y;
 				network_strips.shiftAssignedStrip(ego, delta_inx);
