@@ -367,6 +367,13 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 		}
 	}
 	double ay = -k1 * (ego->getY() - target_y) - k2 * ego->getSpeedY();
+	double next_y = ego->getY() + ego->getSpeedY() * time_step + 0.5 * ay * pow(time_step, 2);
+	bool is_sufficient_gap_front = isSufficientGap(ego, next_x, next_y, front_cars, true);
+	bool is_sufficient_gap_back = isSufficientGap(ego, next_x, next_y, back_cars, false);
+	if (!(is_sufficient_gap_front && is_sufficient_gap_back)) {
+		ay = - ego->getSpeedY() / time_step;
+	}
+	
 
 	return std::make_tuple(ax, ay);
 }
