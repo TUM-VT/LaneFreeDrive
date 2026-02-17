@@ -277,7 +277,7 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 
 }
 
-bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> neighbours) {
+bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> neighbours, bool are_front_neighbours) {
 
 	bool sufficient_gap = true;
 	Car* overlap_car = calculateFirstLateralOverlap(ego, neighbours);
@@ -285,11 +285,11 @@ bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Ca
 		double diff_vel_x = ego->getSpeedX() - overlap_car->getSpeedX();
 		double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
 		double gap;
-		if (overlap_car->getRelativeDistanceX(ego) > 0) {
-			gap = overlap_car->getRelativeDistanceX(ego);
+		if (are_front_neighbours) {
+			gap = ego->getRelativeDistanceX(overlap_car);
 		}
 		else {
-			gap = ego->getRelativeDistanceX(overlap_car);
+			gap = overlap_car->getRelativeDistanceX(ego);
 		}
 		gap = gap - overlap_car->getLength() / 2.0 - ego->getLength() / 2.0;
 

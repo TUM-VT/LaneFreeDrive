@@ -74,7 +74,7 @@ private:
 
 	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
 
-	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> neighbours);
+	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> neighbours, bool are_front_neighbours);
 
 	// Calculate the safe velocity for the ego vehicle with the leader at a certain gap
 	double calculateSafeVelocity(Car* ego, Car* leader, double gap);
