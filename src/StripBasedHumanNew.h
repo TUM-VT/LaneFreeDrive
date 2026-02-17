@@ -60,6 +60,7 @@ private:
 	double numStripsConsidered;
 	double k1, k2;
 	double off_ramp_desire_mid_point, off_ramp_desire_spread, off_ramp_desire_lambda;
+	double lateral_overlap_buffer;
 	std::ofstream StripsChangeFile;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<Car*, double> ReactionTimesMap;
