@@ -115,7 +115,15 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	}
 	k1 = stod(secParam["k1"]);
 	k2 = stod(secParam["k2"]);
-	off_ramp_desire_mid_point = stod(secParam["off_ramp_desire_mid_point"]);
+	std::vector<string> off_ramp_midpoint_range = splitString(secParam["off_ramp_desire_mid_point"], ",");
+	if (off_ramp_midpoint_range.size() > 1) {
+		off_ramp_desire_mid_point = std::nan("");
+		midpoint_rng = std::mt19937(std::stoi(config["General Parameters"]["seed"]));
+		off_ramp_midpoint_distribution = std::uniform_real_distribution<double>(std::stod(off_ramp_midpoint_range[0]), std::stod(off_ramp_midpoint_range[1]));
+	}
+	else {
+		off_ramp_desire_mid_point = stod(secParam["off_ramp_desire_mid_point"]);
+	}
 	off_ramp_desire_spread = stod(secParam["off_ramp_desire_spread"]);
 	off_ramp_desire_lambda = stod(secParam["off_ramp_desire_lambda"]);
 	StripWidth = stod(secParam["StripWidth"]);
@@ -241,7 +249,14 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 	if (ego->getIfOffRampVeh()) {
 		double dist_to_off_ramp = ego->calDistanceToRampEnd();
 		if (dist_to_off_ramp > -1) {
-			double benefit = 1 / (1 + std::exp(off_ramp_desire_lambda * (dist_to_off_ramp - off_ramp_desire_mid_point) / off_ramp_desire_spread));
+			double mid_point = off_ramp_desire_mid_point;
+			if (std::isnan(off_ramp_desire_mid_point)) {
+				if (off_ramp_midpoint_map.find(ego) == off_ramp_midpoint_map.end()) {
+					off_ramp_midpoint_map[ego] = off_ramp_midpoint_distribution(midpoint_rng);
+				}
+				mid_point = off_ramp_midpoint_map[ego];
+			}
+			double benefit = 1 / (1 + std::exp(off_ramp_desire_lambda * (dist_to_off_ramp - mid_point) / off_ramp_desire_spread));
 			double lateral_ratio = ego->getY() / (network_strips.getBoundaryWidth(ego) - ego->getWidth());
 			benefit = LaneChangeThreshold * lateral_ratio * benefit;
 			right += benefit;

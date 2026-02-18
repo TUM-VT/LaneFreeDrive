@@ -64,8 +64,10 @@ private:
 	std::ofstream StripsChangeFile;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<Car*, double> ReactionTimesMap;
-	std::mt19937 rng;
+	std::mt19937 rng, midpoint_rng;
 	std::normal_distribution<double> reaction_distribution;
+	std::uniform_real_distribution<double> off_ramp_midpoint_distribution;
+	std::map<Car*, double> off_ramp_midpoint_map;
 	NetworkStrips network_strips;
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
