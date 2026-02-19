@@ -161,17 +161,14 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 }
 
 Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors) {
-	double lower_ego_y = ego->getY() - ego->getWidth() / 2.0 - lateral_overlap_buffer;
-	double upper_ego_y = ego->getY() + ego->getWidth() / 2.0 + lateral_overlap_buffer;
 	Car* leader = nullptr;
 	for (Car* car : neighbors) {
-		double lower_car_y = car->getY() - car->getWidth() / 2.0;
-		double upper_car_y = car->getY() + car->getWidth() / 2.0;
-
-		if (std::max(lower_ego_y, lower_car_y) < std::min(upper_ego_y, upper_car_y)) {
+		double lateral_distance = std::abs(ego->getRelativeDistanceY(car));
+		if (lateral_distance <= (ego->getWidth() + car->getWidth()) / 2.0 + lateral_overlap_buffer) {
 			leader = car;
 			break;
 		}
+
 	}
 	return leader;
 }
