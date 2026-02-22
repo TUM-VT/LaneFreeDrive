@@ -47,11 +47,6 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	k2_boundary = stod(secParam["k2_boundary"]);
 	setAccAndJerkConstraints(secParam);
 
-	auto vsafe = splitString(secParam["VSafeVehModels"], ",");
-	if (vsafe[0].compare("") != 0) {
-		VSafeVehModels = std::set(vsafe.begin(), vsafe.end());
-	}
-
 	// find the key in the variable that starts with "PL:"
 	modelParams = extractModelSpecificParams(config, "PL:");
 
@@ -109,20 +104,18 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	fy = controlRoadBoundary(ego, fy);
 
 	// Limit the x-axis acceleration according to safe velocity
-	if (VSafeVehModels.size() > 0){
-		Car* leader = leader_map[ego];
-		double ax_safe = calculateSafeAcc(ego, leader);
-		fx = std::min(fx, ax_safe);
+	Car* leader = leader_map[ego];
+	double ax_safe = calculateSafeAcc(ego, leader);
+	fx = std::min(fx, ax_safe);
 
-		if (ttc_file.is_open()) {
-			double sim_time = get_current_time_step() * get_time_step_length();
-			if (leader != nullptr) {
-				double relative_speed = ego->getSpeedX() - leader->getSpeedX();
-				if (relative_speed > 0) {
-					double lead_gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
-					double TTC = lead_gap / relative_speed;
-					ttc_file << sim_time << "," << ego->getVehName() << "," << leader->getVehName() << std::fixed << std::setprecision(2) << "," << lead_gap << "," << ego->getSpeedX() << "," << leader->getSpeedX() << "," << TTC << std::endl;
-				}
+	if (ttc_file.is_open()) {
+		double sim_time = get_current_time_step() * get_time_step_length();
+		if (leader != nullptr) {
+			double relative_speed = ego->getSpeedX() - leader->getSpeedX();
+			if (relative_speed > 0) {
+				double lead_gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
+				double TTC = lead_gap / relative_speed;
+				ttc_file << sim_time << "," << ego->getVehName() << "," << leader->getVehName() << std::fixed << std::setprecision(2) << "," << lead_gap << "," << ego->getSpeedX() << "," << leader->getSpeedX() << "," << TTC << std::endl;
 			}
 		}
 	}

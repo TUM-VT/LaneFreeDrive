@@ -34,7 +34,6 @@ protected:
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;
 	std::map<int, double> cdf_map;
-	std::set<std::string> VSafeVehModels;
 	std::map<std::string, std::map<std::string, std::string>> modelParams;
 	std::ofstream ttc_file;
 
