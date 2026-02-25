@@ -90,6 +90,7 @@ public:
 	void setLFTStrategy(LFTStrategy* lftstrategy) { this->lftstrategy = lftstrategy; }
 	void setX(double x) { this->x = x; }
 	void setCircularX(double circularX) { this->circularX = circularX; }
+	void setDesiredSpeed(double new_desired_speed);
 
 protected:
 	double width;

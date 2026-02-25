@@ -35,7 +35,6 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	Kp1 = stod(secParam["kp1"]);
 	Kp2 = stod(secParam["kp2"]);
 	verordnungsindex = stod(secParam["pl_force_index"]);
-	kpl_off_ramp = stod(secParam["kpl_off_ramp"]);
 	nudge_index = stod(secParam["nudge_index"]);
 	repulse_index = stod(secParam["repulse_index"]);
 	ReactionTime = stod(secParam["ReactionTime"]);
@@ -45,6 +44,11 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	BoundaryControlLookAhead = stod(secParam["BoundaryControlLookAhead"]);
 	k1_boundary = stod(secParam["k1_boundary"]);
 	k2_boundary = stod(secParam["k2_boundary"]);
+	off_ramp_sigmoid_mid_point = stod(secParam["off_ramp_sigmoid_mid_point"]);
+	off_ramp_sigmoid_spread = stod(secParam["off_ramp_sigmoid_spread"]);
+	off_ramp_sigmoid_lambda = stod(secParam["off_ramp_sigmoid_lambda"]);
+	off_ramp_additional_kpl = stod(secParam["off_ramp_additional_kpl"]);
+
 	setAccAndJerkConstraints(secParam);
 
 	// find the key in the variable that starts with "PL:"
@@ -245,26 +249,36 @@ double PotentialLines::calculatePLForce(Car* ego) {
 	auto [global_left_boundary_y, global_right_boundary_y] = ego->calBoundary(BoundaryControlLookAhead);
 	double lower_bound = global_right_boundary_y + PLBoundaryMargin;
 	double upper_bound = global_left_boundary_y - PLBoundaryMargin;
+	double vd = ego->getDesiredSpeed();
+	double kpl = verordnungsindex;
+
+	// Adjust the speed used for target line calculation for the off-ramp vehicles. This will steer the off-ramp vehicle to the right.
+	if (ego->getIfOffRampVeh()) {
+		double distance_to_ramp_end = ego->calDistanceToRampEnd();
+		if (distance_to_ramp_end > -1) {
+			// Use sigmoid function to adjust the speed used for target line calculation.
+			double sigmoid_value = 1 / (1 + exp(- off_ramp_sigmoid_lambda * (distance_to_ramp_end - off_ramp_sigmoid_mid_point) / off_ramp_sigmoid_spread));
+			vd = MINDesiredSpeed + (vd - MINDesiredSpeed) * (sigmoid_value);
+			ego->setDesiredSpeed(vd);
+			// Also use higher potential line force
+			kpl = kpl + off_ramp_additional_kpl;
+		}
+	}
 
 	double target_line;
 	if (PLForceModel.compare("UNIFORM") == 0) {
-		target_line = calculateTargetLineUniform(ego, lower_bound, upper_bound);
+		target_line = calculateTargetLineUniform(vd, lower_bound, upper_bound);
 	}
 	else {
-		target_line = calculateTargetLineCDF(ego, lower_bound, upper_bound);
+		target_line = calculateTargetLineCDF(vd, lower_bound, upper_bound);
 	}
 	assigned_pl[ego] = target_line;
 	auto [global_x, global_y] = ego->getGlobalPosition();
-	double kpl = verordnungsindex;
-	if (isOffRampSituation(ego)) 
-		kpl = verordnungsindex + kpl_off_ramp * (ego->getX() / ego->getCurrentEdgeLength());
-
 	double fy_pl = kpl * (target_line - global_y);
 	return fy_pl;
 }
 
-double PotentialLines::calculateTargetLineCDF(Car* ego, double lower_bound, double upper_bound) {
-	double vd = get_desired_speed(ego->getNumId());
+double PotentialLines::calculateTargetLineCDF(double vd, double lower_bound, double upper_bound) {
 	int vd_key = 1000 * std::floor(vd * 1000.0);
 	// Find the vd_key in cdf_map otherwise throw an error
 	if (cdf_map.find(vd_key) == cdf_map.end()) {
@@ -280,9 +294,7 @@ double PotentialLines::calculateTargetLineCDF(Car* ego, double lower_bound, doub
 
 
 
-double PotentialLines::calculateTargetLineUniform(Car* ego, double lower_bound, double upper_bound) {
-	double vd = ego->getDesiredSpeed();
-
+double PotentialLines::calculateTargetLineUniform(double vd, double lower_bound, double upper_bound) {
 	double co = vd - MINDesiredSpeed;
 	double areas = MAXDesiredSpeed - MINDesiredSpeed;
 	double target_line = lower_bound + ((upper_bound - lower_bound) / areas) * co;

@@ -20,7 +20,7 @@ protected:
 	double ForceIndex, DesireVelocityFI;
 	double PLBoundaryMargin;
 	double PLBoundaryMarginOffsetX;
-	double Li, Wi, wx1, wx2, wy, verordnungsindex, kpl_off_ramp;
+	double Li, Wi, wx1, wx2, wy, verordnungsindex;
 	double Kp1, Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;
 	double nudge_index, repulse_index;
@@ -30,6 +30,7 @@ protected:
 	double Accelerate;
 	double MinSafeGap;
 	double BoundaryControlLookAhead, k1_boundary, k2_boundary;
+	double off_ramp_sigmoid_mid_point, off_ramp_sigmoid_spread, off_ramp_sigmoid_lambda, off_ramp_additional_kpl;
 	std::string PLForceModel;
 	std::vector<std::string> speed_mu;
 	std::vector<std::string> speed_sigma;
@@ -64,9 +65,9 @@ protected:
 
 	virtual double calculatePLForce(Car* ego);
 
-	double calculateTargetLineCDF(Car* ego, double lower_bound, double upper_bound);
+	double calculateTargetLineCDF(double vd, double lower_bound, double upper_bound);
 
-	double calculateTargetLineUniform(Car* ego, double lower_bound, double upper_bound);
+	double calculateTargetLineUniform(double vd, double lower_bound, double upper_bound);
 
 	/* The Porbability Integral Transform (PIT) of the pdf used for generating the potential lines.
 	* A good link to understand PIT: https://matthewfeickert.github.io/Statistics-Notes/notebooks/Introductory/probability-integral-transform.html

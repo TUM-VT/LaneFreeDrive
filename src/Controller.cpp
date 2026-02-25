@@ -268,6 +268,11 @@ double Car::calDistanceToRampEnd(){
 	return distance_to_ramp_end;
 }
 
+void Car::setDesiredSpeed(double new_desired_speed) {
+	desiredSpeed = new_desired_speed;
+	set_desired_speed(numID, new_desired_speed);
+}
+
 double Car::getCurrentEdgeWidth() {
 	return get_edge_width(currentEdge);
 }
