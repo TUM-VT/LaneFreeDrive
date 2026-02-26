@@ -79,6 +79,7 @@ void PotentialLines::finalize_simulation() {
 	if (ttc_file.is_open()) {
 		ttc_file.close();
 	}
+	original_desired_speeds.clear();
 }
 
 void PotentialLines::update() {
@@ -87,6 +88,12 @@ void PotentialLines::update() {
 	for (const auto& [key, car] : carsMap) {
 		std::vector<Car*> front_neighbors = getNeighbours(car, this->FrontDistnce);
 		leader_map[car] = calculateLeader(car, front_neighbors);
+	}
+}
+
+void PotentialLines::vehicle_exit(Car* car) {
+	if (original_desired_speeds.find(car) != original_desired_speeds.end()) {
+		original_desired_speeds.erase(car);
 	}
 }
 
@@ -254,11 +261,14 @@ double PotentialLines::calculatePLForce(Car* ego) {
 
 	// Adjust the speed used for target line calculation for the off-ramp vehicles. This will steer the off-ramp vehicle to the right.
 	if (ego->getIfOffRampVeh()) {
+		if (original_desired_speeds.find(ego) == original_desired_speeds.end()) {
+			original_desired_speeds[ego] = vd;
+		}
 		double distance_to_ramp_end = ego->calDistanceToRampEnd();
 		if (distance_to_ramp_end > -1) {
 			// Use sigmoid function to adjust the speed used for target line calculation.
 			double sigmoid_value = 1 / (1 + exp(- off_ramp_sigmoid_lambda * (distance_to_ramp_end - off_ramp_sigmoid_mid_point) / off_ramp_sigmoid_spread));
-			vd = MINDesiredSpeed + (vd - MINDesiredSpeed) * (sigmoid_value);
+			vd = MINDesiredSpeed + (original_desired_speeds[ego] - MINDesiredSpeed) * sigmoid_value;
 			ego->setDesiredSpeed(vd);
 			// Also use higher potential line force
 			kpl = kpl + off_ramp_additional_kpl;

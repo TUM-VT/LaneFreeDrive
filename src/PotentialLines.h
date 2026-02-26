@@ -42,9 +42,13 @@ protected:
 
 	void finalize_simulation() override;
 
+	void vehicle_exit(Car* car) override;
+
 	std::map <Car*, Car*> leader_map;
 
 	std::map <Car*, double> assigned_pl;
+
+	std::map <Car*, double> original_desired_speeds;
 
 	std::tuple<double, double> calculateNeighbourForces(Car* ego, std::vector<Car*> neighbours);
 
