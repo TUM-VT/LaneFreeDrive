@@ -88,7 +88,9 @@ int NetworkStrips::calculateStripLimit(Car* car) {
 
 void StripBasedHumanNew::update() {
 	for (auto& [car_id, car] : carsMap) {
-		network_strips.update(car);
+		if (car->getLFTStrategy() == this) {
+			network_strips.update(car);
+		}
 	}
 	
 }
