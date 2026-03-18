@@ -91,8 +91,10 @@ public:
 	void setX(double x) { this->x = x; }
 	void setCircularX(double circularX) { this->circularX = circularX; }
 	void setDesiredSpeed(double new_desired_speed);
+	static void set_speed_limit_for_y_movement(double speed) { Car::lim_speed_x_for_y = speed; }
 
 protected:
+	static double lim_speed_x_for_y;
 	double width;
 	double length;
 	double speedX;

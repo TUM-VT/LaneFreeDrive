@@ -151,6 +151,8 @@ void LFTStrategy::setAccAndJerkConstraints(map<string, string> config) {
 
 bool LFTStrategy::circular = false;
 
+double Car::lim_speed_x_for_y = 0;
+
 Car::Car(NumericalID numID, iniMap config, map<string, LFTStrategy*> strategies) {
 	width =  get_veh_width(numID);
 	length = get_veh_length(numID);
@@ -219,6 +221,9 @@ std::tuple<double, double> Car::applyAcceleration() {
 	auto [ax, ay] = lftstrategy->calculateAcceleration(this);
 	accX = ax;
 	accY = ay;
+	if (speedX < lim_speed_x_for_y) {
+		ay = - getSpeedY() / get_time_step_length();
+	}
 	apply_acceleration(numID, ax, ay);
 	return std::make_tuple(ax, ay);
 }
