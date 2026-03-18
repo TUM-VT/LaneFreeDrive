@@ -212,6 +212,9 @@ void simulation_initialize() {
 		default_path = "default_config.ini";
 	}
 	config = readConfigFileFallback(config_path, default_path);
+	if (stoi(config["General Parameters"]["seed"]) == -1) {
+		config["General Parameters"]["seed"] = std::to_string(get_seed());
+	}
 	insert_vehicles();
 	LFTStrategy::setCircular(config);
 	strategies["PotentialLines"] = new PotentialLines(config);
