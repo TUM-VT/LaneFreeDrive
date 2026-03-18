@@ -27,6 +27,7 @@ protected:
 	int n, p, q;
 	double ReactionTime;
 	double Deccelerate;
+	double MaxBrakeDeceleration;
 	double Accelerate;
 	double MinSafeGap;
 	double BoundaryControlLookAhead, k1_boundary, k2_boundary;

@@ -39,6 +39,7 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	repulse_index = stod(secParam["repulse_index"]);
 	ReactionTime = stod(secParam["ReactionTime"]);
 	Deccelerate = stod(secParam["Deceleration"]);
+	MaxBrakeDeceleration = stod(secParam["MaxBrakeDeceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
 	MinSafeGap = stod(secParam["MinSafeGap"]);
 	BoundaryControlLookAhead = stod(secParam["BoundaryControlLookAhead"]);
@@ -180,6 +181,14 @@ double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
 		double diff_vel_x = vsafe - ego->getSpeedX();
 		if (diff_vel_x < 0) {
 			ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
+			// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
+			if (MaxBrakeDeceleration > 0) {
+				double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
+				double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
+				if (gap < brake_distance) {
+					ax = -std::min(std::abs(diff_vel_x / time_step), MaxBrakeDeceleration);
+				}
+			}
 		}
 		else {
 			ax = diff_vel_x / time_step;
