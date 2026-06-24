@@ -128,6 +128,15 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	}
 	off_ramp_desire_spread = stod(secParam["off_ramp_desire_spread"]);
 	off_ramp_desire_lambda = stod(secParam["off_ramp_desire_lambda"]);
+	std::vector<string> on_ramp_distaces = splitString(secParam["on_ramp_desire_distance"], ",");
+	if (on_ramp_distaces.size() > 1) {
+		on_ramp_desire_distance = std::nan("");
+		on_ramp_desire_dist_rng = std::mt19937(std::stoi(config["General Parameters"]["seed"]));
+		on_ramp_desire_distance_distribution = std::uniform_real_distribution<double>(std::stod(on_ramp_distaces[0]), std::stod(on_ramp_distaces[1]));
+	}
+	else {
+		on_ramp_desire_distance = stod(secParam["on_ramp_desire_distance"]);
+	}
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
 	Deccelerate = stod(secParam["Deceleration"]);
@@ -246,7 +255,7 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 
 	// If it is an off-ramp vehicle, then add additional benefit to the right side
 	if (ego->getIfOffRampVeh()) {
-		double dist_to_off_ramp = ego->calDistanceToRampEnd();
+		double dist_to_off_ramp = ego->calRampDistance();
 		if (dist_to_off_ramp > -1) {
 			double mid_point = off_ramp_desire_mid_point;
 			if (std::isnan(off_ramp_desire_mid_point)) {
@@ -259,6 +268,23 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 			double lateral_ratio = ego->getY() / (network_strips.getBoundaryWidth(ego) - ego->getWidth());
 			benefit = LaneChangeThreshold * lateral_ratio * benefit;
 			right += benefit;
+		}
+	}
+
+	// If it is an on-ramp vehicle on the acceleration lane, then add additional benefit to the left side
+	if (ego->getIfOnRampVeh() && ego->isOnAccLane()) {
+		double dist_on_ramp = ego->calRampDistance();
+		if (dist_on_ramp > -1) {
+			double desire_dist = on_ramp_desire_distance;
+			if (std::isnan(on_ramp_desire_distance)) {
+				if (on_ramp_desire_dist_map.find(ego) == on_ramp_desire_dist_map.end()) {
+					on_ramp_desire_dist_map[ego] = on_ramp_desire_distance_distribution(on_ramp_desire_dist_rng);
+				}
+				desire_dist = on_ramp_desire_dist_map[ego];
+			}
+			if (dist_on_ramp > desire_dist) {
+				left += LaneChangeThreshold;
+			}
 		}
 	}
 

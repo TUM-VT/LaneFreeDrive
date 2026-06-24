@@ -274,7 +274,7 @@ double PotentialLines::calculatePLForce(Car* ego) {
 		if (original_desired_speeds.find(ego) == original_desired_speeds.end()) {
 			original_desired_speeds[ego] = vd;
 		}
-		double distance_to_ramp_end = ego->calDistanceToRampEnd();
+		double distance_to_ramp_end = ego->calRampDistance();
 		if (distance_to_ramp_end > -1) {
 			// Use sigmoid function to adjust the speed used for target line calculation.
 			double sigmoid_value = 1 / (1 + exp(- off_ramp_sigmoid_lambda * (distance_to_ramp_end - off_ramp_sigmoid_mid_point) / off_ramp_sigmoid_spread));

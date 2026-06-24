@@ -35,34 +35,6 @@ LFTStrategy::LFTStrategy(iniMap config) {
 	off_ramp_edges = splitString(ramp_info["OffRampEdges"], ",");
 }
 
-bool LFTStrategy::isOnRampSituation(Car* car) {
-	bool on_ramp_situation = false;
-	if (car->getIfOnRampVeh()) {
-		string current_edge = car->getCurrentEdgeName();
-		for (string edge : on_ramp_edges) {
-			if (current_edge.compare(edge) == 0) {
-				on_ramp_situation = true;
-				break;
-			}
-		}
-	}
-	return on_ramp_situation;
-}
-
-bool LFTStrategy::isOffRampSituation(Car* car) {
-	bool off_ramp_situation = false;
-	if (car->getIfOffRampVeh()) {
-		string current_edge = car->getCurrentEdgeName();
-		for (string edge : off_ramp_edges) {
-			if (current_edge.compare(edge) == 0) {
-				off_ramp_situation = true;
-				break;
-			}
-		}
-	}
-	return off_ramp_situation;
-}
-
 void LFTStrategy::setCircular(iniMap config) {
 	auto it = config.find("General Parameters");
 	int circular_int = std::stoi(it->second["circular_movement"]);
@@ -252,7 +224,7 @@ std::tuple<double, double> Car::getGlobalPosition() {
 	return std::make_tuple(get_global_position_x(numID), get_global_position_y(numID));
 }
 
-double Car::calDistanceToRampEnd(){
+double Car::calRampDistance(){
 	double distance_to_ramp_end = -1;
 	if (isOffRampVeh) {
 		NumericalID next_edge_id = get_next_edge_id(numID);
@@ -271,6 +243,12 @@ double Car::calDistanceToRampEnd(){
 		}
 	}
 	return distance_to_ramp_end;
+}
+
+bool Car::isOnAccLane() {
+	int acc_lane = am_i_on_acceleration_lane(numID);
+	if (acc_lane == 1) return true;
+	else return false;
 }
 
 void Car::setDesiredSpeed(double new_desired_speed) {

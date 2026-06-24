@@ -41,10 +41,6 @@ protected:
 	std::map<std::string, std::tuple<double, double>> acc_jerk_limits;
 	std::tuple<double, double> applyAccAndJerkConstraints(double ax, double ay, Car* car);
 	void setAccAndJerkConstraints(std::map<std::string, std::string> config);
-	// Checks if the vehicle is under on-ramp situation
-	bool isOnRampSituation(Car* car);
-	// Checks if the vehicle is under off-ramp situation
-	bool isOffRampSituation(Car* car);
 
 private:
 	std::vector<std::string> on_ramp_edges, off_ramp_edges;
@@ -62,7 +58,8 @@ public:
 	double getRelativeDistanceX(Car* other);
 	double getRelativeDistanceY(Car* other);
 	std::tuple<double, double> getGlobalPosition();
-	double calDistanceToRampEnd();
+	double calRampDistance();
+	bool isOnAccLane();
 
 	double getWidth() { return width; }
 	double getLength() { return length; }

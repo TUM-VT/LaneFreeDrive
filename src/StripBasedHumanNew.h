@@ -59,15 +59,15 @@ private:
 	double Lambda;
 	double numStripsConsidered;
 	double k1, k2;
-	double off_ramp_desire_mid_point, off_ramp_desire_spread, off_ramp_desire_lambda;
+	double off_ramp_desire_mid_point, off_ramp_desire_spread, off_ramp_desire_lambda, on_ramp_desire_distance;
 	double lateral_overlap_buffer;
 	std::ofstream StripsChangeFile;
 	std::map<Car*, std::vector<double>> driverMemory;
 	std::map<Car*, double> ReactionTimesMap;
-	std::mt19937 rng, midpoint_rng;
+	std::mt19937 rng, midpoint_rng, on_ramp_desire_dist_rng;
 	std::normal_distribution<double> reaction_distribution;
-	std::uniform_real_distribution<double> off_ramp_midpoint_distribution;
-	std::map<Car*, double> off_ramp_midpoint_map;
+	std::uniform_real_distribution<double> off_ramp_midpoint_distribution, on_ramp_desire_distance_distribution;
+	std::map<Car*, double> off_ramp_midpoint_map, on_ramp_desire_dist_map, on_ramp_covered_lat_dist;
 	NetworkStrips network_strips;
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
