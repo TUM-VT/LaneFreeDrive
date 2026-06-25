@@ -37,9 +37,16 @@ void NetworkStrips::update(Car* car) {
 		double car_start_y = right_boundary_dist - car->getWidth() / 2.0;
 		carAssignedStrip[car] = floor(car_start_y / strip_width);
 	}
+
+	// If its a mergin vehicle on the on-ramp and not on the acceleration lane, then use current position assign strips
+	if (car->getIfOnRampVeh() && car->calRampDistance() > -1 && !car->isOnAccLane()) {
+		double car_start_y = std::max(right_boundary_dist - car->getWidth() / 2.0 + 0.1, 0.0);
+		carAssignedStrip[car] = floor(car_start_y / strip_width);
+	}
+
 	// Due to changing boundary values it is possible that the vehicle position is now out of the boundary strip limits. 
 	// In this case, we assign the vehicle to the closest strip within the limits.
-	else if (left_boundary_dist < 0) {
+	if (left_boundary_dist < 0) {
 		carAssignedStrip[car] = calculateStripLimit(car);
 	}
 	else if (right_boundary_dist < 0) {
@@ -234,6 +241,11 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 	int left_most = std::min(current_strip + (int)numStripsConsidered, total_strips - 1);
 	int right_most = std::max(current_strip - (int)numStripsConsidered, 0);
 
+	// Initiate driver memory for new cars
+	if (driverMemory.find(ego) == driverMemory.end()) {
+		driverMemory[ego] = { 0, 0 };
+	}
+
 	double right = 0;
 	double left = 0;
 	for (int inx = right_most; inx < left_most + 1; inx++) {
@@ -283,14 +295,11 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 				desire_dist = on_ramp_desire_dist_map[ego];
 			}
 			if (dist_on_ramp > desire_dist) {
-				left += LaneChangeThreshold;
+				double val = driverMemory[ego][0];
+				double diff = std::max(LaneChangeThreshold + left - driverMemory[ego][0], 0.0);
+				left += diff + 1e-6;
 			}
 		}
-	}
-
-	// Initiate driver memory for new cars
-	if (driverMemory.find(ego) == driverMemory.end()) {
-		driverMemory[ego] = { 0, 0 };
 	}
 
 	if (left > 0) {
