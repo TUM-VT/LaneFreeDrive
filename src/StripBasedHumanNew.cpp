@@ -290,7 +290,7 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 
 	// If it is an on-ramp vehicle on the acceleration lane, then add additional benefit to the left side
 	if (ego->getIfOnRampVeh() && ego->isOnAccLane()) {
-		double dist_on_ramp = ego->calRampDistance();
+		double dist_on_ramp = ego->calRampDistance(false);
 		if (dist_on_ramp > -1) {
 			double desire_dist = on_ramp_desire_distance;
 			if (std::isnan(on_ramp_desire_distance)) {

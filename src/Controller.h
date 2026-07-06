@@ -58,7 +58,8 @@ public:
 	double getRelativeDistanceX(Car* other);
 	double getRelativeDistanceY(Car* other);
 	std::tuple<double, double> getGlobalPosition();
-	double calRampDistance();
+	// If measure_remaining_dist is false, the distance is simply the distance traveled so far on the ramp area. Otherwise, it returns the distance remaining till the end of the ramp area. If the vehicle is not on a ramp, it returns -100.
+	double calRampDistance(bool measure_remaining_dist=true);
 	bool isOnAccLane();
 
 	double getWidth() { return width; }
