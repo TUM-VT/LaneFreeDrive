@@ -214,6 +214,7 @@ void simulation_initialize() {
 	config = readConfigFileFallback(config_path, default_path);
 	if (stoi(config["General Parameters"]["seed"]) == -1) {
 		config["General Parameters"]["seed"] = std::to_string(get_seed());
+		std::cout << "Seed in config.ini is set to -1. Using the seed from SUMO: " << config["General Parameters"]["seed"] << std::endl;
 	}
 	Car::set_speed_limit_for_y_movement(stod(config["General Parameters"]["lim_speed_x_for_y"]));
 	insert_vehicles();
