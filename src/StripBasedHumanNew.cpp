@@ -183,15 +183,17 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 	return vsafe;
 }
 
-Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors) {
+Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors, double next_y) {
 	Car* leader = nullptr;
+	double delta_y = 0;
+	if (!std::isnan(next_y)) 
+		delta_y = next_y - ego->getY();
 	for (Car* car : neighbors) {
-		double lateral_distance = std::abs(ego->getRelativeDistanceY(car));
+		double lateral_distance = std::abs(ego->getRelativeDistanceY(car) - delta_y);
 		if (lateral_distance <= (ego->getWidth() + car->getWidth()) / 2.0 + lateral_overlap_buffer) {
 			leader = car;
 			break;
 		}
-
 	}
 	return leader;
 }
@@ -334,7 +336,7 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> neighbours, bool are_front_neighbours) {
 
 	bool sufficient_gap = true;
-	Car* overlap_car = calculateFirstLateralOverlap(ego, neighbours);
+	Car* overlap_car = calculateFirstLateralOverlap(ego, neighbours, y);
 	if (overlap_car != nullptr) {
 		double diff_vel_x = ego->getSpeedX() - overlap_car->getSpeedX();
 		double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;

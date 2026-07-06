@@ -72,7 +72,7 @@ private:
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
-	Car* calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors);
+	Car* calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors, double next_y= std::nan(""));
 
 	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
 
