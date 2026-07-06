@@ -25,6 +25,11 @@ NetworkStrips::NetworkStrips(double strip_width, double look_ahead_distance) {
 }
 
 void NetworkStrips::update(Car* car) {
+	double last_assigned_y = std::nan("");
+	if (carAssignedStrip.find(car) != carAssignedStrip.end()) {
+		last_assigned_y = getYFromInx(car, carAssignedStrip[car]);
+	}
+
 	// For simplicity, strips are calculated according to the road boundaries which can be different from the actual road boundaries.
 	// This assumes that the first strip starts at the lateral location of the the right most boundary.
 	auto [left_boundary_dist, right_boundary_dist] = car->calDistanceToBoundary(look_ahead_distance, 0);
@@ -38,10 +43,10 @@ void NetworkStrips::update(Car* car) {
 		carAssignedStrip[car] = floor(car_start_y / strip_width);
 	}
 
-	// If its a mergin vehicle on the on-ramp and not on the acceleration lane, then use current position assign strips
+	// If its a merging vehicle on the on-ramp and not on the acceleration lane, then assign the strip that is closest to the last assigned strip. 
+	// This is related to the changing boundaries and the additional movement that may happen due to this.
 	if (car->getIfOnRampVeh() && car->calRampDistance() > -1 && !car->isOnAccLane()) {
-		double car_start_y = std::max(right_boundary_dist - car->getWidth() / 2.0 + 0.1, 0.0);
-		carAssignedStrip[car] = floor(car_start_y / strip_width);
+		carAssignedStrip[car] = getInxFromY(car, last_assigned_y);
 	}
 
 	// Due to changing boundary values it is possible that the vehicle position is now out of the boundary strip limits. 
