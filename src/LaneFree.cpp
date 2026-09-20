@@ -32,7 +32,6 @@ using std::vector;
 using iniMap = map<string, map<string, string>>;
 namespace fs = std::filesystem;
 
-map<NumericalID, Car*> carsMap;
 map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
@@ -247,7 +246,7 @@ void simulation_initialize() {
 		printf("Speed distribution %s not recognized. Setting it to empty field.\n", speed_dist.c_str());
 		config["General Parameters"]["speed_dist"] = "";
 	}
-	carsMap.clear();
+	LFTStrategy::getCarsMap().clear();
 	abs_lateral_speeds.clear();
 	printf("\nInitializiation over!!!\n");
 }
@@ -255,6 +254,7 @@ void simulation_initialize() {
 void simulation_step() {
 
 	NumericalID* allVehIDs = get_all_ids();
+	std::map<NumericalID, Car*>& carsMap = LFTStrategy::getCarsMap();
 	// Update the vehicle class instances
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
@@ -269,11 +269,11 @@ void simulation_step() {
 
 	// Update the strategies
 	for (const auto& strategy : used_strategies) {
-		strategy->setCarsMap(carsMap);
 		strategy->update();
 	}
 
 	// Apply the acceleration
+	allVehIDs = get_all_ids();
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
 		Car* car = carsMap[numID];
@@ -408,6 +408,7 @@ void event_vehicle_enter(NumericalID veh_id) {
 }
 
 void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
+	std::map<NumericalID, Car*>& carsMap = LFTStrategy::getCarsMap();
 	if (has_arrived == 1) {
 		Car* arrived_car = carsMap[veh_id];
 		if (collision_file.is_open()) {
@@ -430,6 +431,7 @@ void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
+	std::map<NumericalID, Car*>& carsMap = LFTStrategy::getCarsMap();
 	if (carsMap.size() > 0 && collision_file.is_open()) {
 		Car* car1 = carsMap[veh_id1];
 		Car* car2 = carsMap[veh_id2];

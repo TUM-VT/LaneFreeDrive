@@ -18,7 +18,7 @@ class LFTStrategy {
 public:
 	LFTStrategy(iniMap config);
 	virtual std::tuple<double, double> calculateAcceleration(Car* car) = 0;
-	void setCarsMap(std::map<NumericalID, Car*> &cars) { carsMap = cars; }
+	static std::map<NumericalID, Car*>& getCarsMap() { return carsMap; }
 	// This method is called at the end of the simulation
 	virtual void finalize_simulation() {};
 	// Returns the neighbours of the ego vehicle within a certain distance (front or back). For the case of circular movement, after calling getNeighbours, use getCircularX of Car to get the corrected x position of the vehicle.
@@ -36,7 +36,7 @@ public:
 	std::vector<std::string> getOffRampEdges() { return off_ramp_edges; }
 
 protected:
-	std::map<NumericalID, Car*> carsMap;
+	inline static std::map<NumericalID, Car*> carsMap{};
 	static bool circular;
 	std::map<std::string, std::tuple<double, double>> acc_jerk_limits;
 	std::tuple<double, double> applyAccAndJerkConstraints(double ax, double ay, Car* car);
