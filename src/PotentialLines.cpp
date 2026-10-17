@@ -210,7 +210,7 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 	lon_axis = li * (ego->getLength() + neighbour->getLength()) + wx1 * (ego->getSpeedX() + neighbour->getSpeedX());
 
 	double wi = w * ego->getWidth() + w * neighbour->getWidth();
-	double t1 = neighbour->getY() - ego->getY();
+	double t1 = ego->getRelativeDistanceY(neighbour);
 	double t2 = ego->getSpeedY() - neighbour->getSpeedY();
 	lat_axis = wi + wy * (tanh(t1) * t2 + sqrt(pow(tanh(t1) * t2, 2) + 0.0001));
 
