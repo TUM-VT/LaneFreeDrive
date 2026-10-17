@@ -232,21 +232,12 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 	double f = (ForceIndex + desire_factor) / (pow((item1 + item2), q) + 1);
 	double fx{ 0 }, fy{ 0 };
 	if (f > 0.001) {
-		double theta = atan(rel_dist_y / rel_dist_x);
-		fx = f * cos(theta);
-		fy = f * sin(theta);
-
-		double fx_sign = (rel_dist_x > 0) ? -1 : 1;
-		double fy_sign = (rel_dist_y > 0) ? -1 : 1;
-
-		double force_index = (rel_dist_x > 0) ? repulse_index : nudge_index;
-		if (modelParams.find(neighbour->getModelName()) != modelParams.end()) {
-			auto param = modelParams[neighbour->getModelName()];
-			force_index = (rel_dist_x > 0) ? std::stod(param["repulse_index"]) : std::stod(param["nudge_index"]);
+		double force_index = (ego->getRelativeDistanceX(neighbour) > 0) ? repulse_index : nudge_index;
+		double dist = std::hypot(rel_dist_x, rel_dist_y);
+		if (dist > 1e-9) {
+			fx = - force_index * f * rel_dist_x / dist;
+			fy = - force_index * f * rel_dist_y / dist;
 		}
-
-		fx = force_index * fx_sign * fabs(fx);
-		fy = force_index * fy_sign * fabs(fy);
 	}
 	return std::make_tuple(fx, fy);
 }
