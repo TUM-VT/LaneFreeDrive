@@ -21,7 +21,7 @@ protected:
 	double PLBoundaryMargin;
 	double PLBoundaryMarginOffsetX;
 	double Li, Wi, wx1, wx2, wy, verordnungsindex;
-	double Kp1, Kp2;
+	double Kp2;
 	double MINDesiredSpeed, MAXDesiredSpeed;
 	double nudge_index, repulse_index;
 	int n, p, q;

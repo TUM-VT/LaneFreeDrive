@@ -32,7 +32,6 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	q = stoi(secParam["q"]);
 	Li = stod(secParam["Li"]);
 	Wi = stod(secParam["Wi"]);
-	Kp1 = stod(secParam["kp1"]);
 	Kp2 = stod(secParam["kp2"]);
 	verordnungsindex = stod(secParam["pl_force_index"]);
 	nudge_index = stod(secParam["nudge_index"]);
@@ -246,9 +245,7 @@ std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighb
 std::tuple<double, double> PotentialLines::calculateTargetSpeedForce(Car* car) {
 	double vd = car->getDesiredSpeed();
 	double step = get_time_step_length();
-	double target_speed = car->getSpeedX() + Accelerate * step;
-	double control_speed = MIN(target_speed, vd);
-	double ax_desired = Kp1 * (control_speed - car->getSpeedX());
+	double ax_desired = Accelerate * (1 - std::pow(car->getSpeedX() / car->getDesiredSpeed(), 4));
 	double ay_desired = -Kp2 * car->getSpeedY();
 	return std::make_tuple(ax_desired, ay_desired);
 }
