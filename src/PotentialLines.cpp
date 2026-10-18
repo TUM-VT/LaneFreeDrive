@@ -162,12 +162,12 @@ Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors
 }
 
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
+	double vego = ego->getSpeedX();
+	double vl = leader->getSpeedX();
 	double a = ReactionTime * Deccelerate;
 	double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
-	double vsafe = -a + sqrt(pow(a, 2) + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap));
-	if (gap - MinSafeGap < 0) {
-		vsafe = 0;
-	}
+	double radicand = a * a + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap);
+	double vsafe = std::max(0.0, -a + sqrt(std::max(0.0, radicand)));
 	return vsafe;
 }
 
