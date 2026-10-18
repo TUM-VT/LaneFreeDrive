@@ -172,16 +172,14 @@ double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 }
 
 double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
-	double desired_speed = ego->getDesiredSpeed();
+	double vego = ego->getSpeedX();
 	double time_step = get_time_step_length();
 	double ax{1000};
 	if (leader != nullptr) {
 		double vsafe = calculateSafeVelocity(ego, leader);
-
-		double diff_vel_x = vsafe - ego->getSpeedX();
+		double diff_vel_x = vsafe - vego;
 		if (diff_vel_x < 0) {
-			ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
-			// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
+			ax = -std::min(std::abs(diff_vel_x / ReactionTime), Deccelerate);
 			if (MaxBrakeDeceleration > 0) {
 				double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
 				double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
@@ -191,7 +189,7 @@ double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
 			}
 		}
 		else {
-			ax = diff_vel_x / time_step;
+			ax = diff_vel_x / ReactionTime;
 		}
 	}
 
