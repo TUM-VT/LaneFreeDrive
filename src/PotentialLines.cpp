@@ -150,9 +150,10 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, st
 
 Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors) {
 	Car* leader = nullptr;
+	double step = get_time_step_length();
 	for (Car* car : front_neighbors) {
-		double lateral_distance = std::abs(ego->getRelativeDistanceY(car));
-		if (lateral_distance <= (ego->getWidth() + car->getWidth()) / 2.0) {
+		double lateral_distance = ego->getRelativeDistanceY(car) + step * (car->getSpeedY() - ego->getSpeedY());
+		if (std::abs(lateral_distance) <= (ego->getWidth() + car->getWidth()) / 2.0 + 0.05) {
 			leader = car;
 			break;
 		}
