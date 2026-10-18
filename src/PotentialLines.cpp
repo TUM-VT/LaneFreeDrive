@@ -220,9 +220,8 @@ std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(C
 
 std::tuple<double, double> PotentialLines::calculateForces(Car* ego, Car* neighbour, double major_axis, double minor_axis) {
 	// The following relative distances are "neigbour" - "ego"
-	double time_step = get_time_step_length();
-	double rel_dist_x = ego->getRelativeDistanceX(neighbour) + time_step * (neighbour->getSpeedX() - ego->getSpeedX());
-	double rel_dist_y = ego->getRelativeDistanceY(neighbour) + time_step * (neighbour->getSpeedY() - ego->getSpeedY());
+	double rel_dist_x = ego->getRelativeDistanceX(neighbour) - 0.5 * wx1 * (ego->getSpeedX() - neighbour->getSpeedX());
+	double rel_dist_y = ego->getRelativeDistanceY(neighbour);
 
 	double item1 = pow((2.0 * fabs(rel_dist_x) / major_axis), n);
 	double item2 = pow((2.0 * fabs(rel_dist_y) / minor_axis), p);
