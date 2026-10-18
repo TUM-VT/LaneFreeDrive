@@ -180,11 +180,14 @@ double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
 		double diff_vel_x = vsafe - vego;
 		if (diff_vel_x < 0) {
 			ax = -std::min(std::abs(diff_vel_x / ReactionTime), Deccelerate);
+			// Check if the allowed deceleration is sufficient to make ego vehicle stop behind the leader if the leader uses more heavy brakes
 			if (MaxBrakeDeceleration > 0) {
-				double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
+				double vl = leader->getSpeedX();
+				double brake_distance = 0.5 * (pow(vego, 2) - pow(vl, 2)) / Deccelerate + MinSafeGap;
 				double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
-				if (gap < brake_distance) {
-					ax = -std::min(std::abs(diff_vel_x / time_step), MaxBrakeDeceleration);
+				if (brake_distance > gap) {
+					double req_ax = pow(vego, 2) / (2.0 * (gap - MinSafeGap) + pow(vl, 2) / MaxBrakeDeceleration);
+					ax = -std::min(std::abs(req_ax), MaxBrakeDeceleration);
 				}
 			}
 		}
@@ -199,12 +202,6 @@ double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
 std::tuple<double, double> PotentialLines::calculatePotentialFunMajorMinorAxis(Car* ego, Car* neighbour) {
 	double lon_axis{ 0 }, lat_axis{ 0 };
 	double li {Li}, w{Wi};
-	if (modelParams.find(neighbour->getModelName()) != modelParams.end()){
-		auto param = modelParams[neighbour->getModelName()];
-		li = std::stod(param["Li"]);
-		w = std::stod(param["Wi"]);
-	}
-
 	lon_axis = li * (ego->getLength() + neighbour->getLength()) + wx1 * (ego->getSpeedX() + neighbour->getSpeedX());
 
 	double wi = w * ego->getWidth() + w * neighbour->getWidth();
