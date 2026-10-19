@@ -40,7 +40,7 @@ void NetworkStrips::update(Car* car) {
 
 	if (carAssignedStrip.find(car) == carAssignedStrip.end()) {
 		double car_start_y = right_boundary_dist - car->getWidth() / 2.0;
-		carAssignedStrip[car] = floor(car_start_y / strip_width);
+		carAssignedStrip[car] = std::max(0.0, floor(car_start_y / strip_width));
 	}
 
 	// If its a merging vehicle on the on-ramp and not on the acceleration lane, then assign the strip that is closest to the last assigned strip. 
