@@ -179,7 +179,6 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 		}
 	}
 	double a = reaction_time * Deccelerate;
-	double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 	double radicand = a * a + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap);
 	double vsafe = std::max(0.0, -a + sqrt(std::max(0.0, radicand)));
 	return vsafe;
