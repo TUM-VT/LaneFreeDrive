@@ -247,8 +247,34 @@ void simulation_initialize() {
 		config["General Parameters"]["speed_dist"] = "";
 	}
 	LFTStrategy::getCarsMap().clear();
+	collisionPairs.clear();
+	collisionStartTimes.clear();
 	abs_lateral_speeds.clear();
 	printf("\nInitializiation over!!!\n");
+}
+
+void determine_vehicle_collision(Car* car) {
+	double time = get_time_step_length() * get_current_time_step();
+	double l{ car->getLength() }, w{ car->getWidth() };
+	for (double neighbor_type : { 1, -1 }) {
+		std::vector<Car*> neighbors = car->getLFTStrategy()->getNeighbours(car, neighbor_type * car->getLength());
+		for (Car* neighbor : neighbors) {
+			double gap_x = std::abs(car->getRelativeDistanceX(neighbor)) - (neighbor->getLength() + l) / 2.0;
+			double gap_y = std::abs(car->getRelativeDistanceY(neighbor)) - (neighbor->getWidth() + w) / 2.0;
+			if (gap_x < 0 && gap_y < 0) {
+				if (collisionStartTimes.count({ car, neighbor }) > 0) {
+					collisionPairs.insert({ car, neighbor });
+				}
+				else if (collisionStartTimes.count({ neighbor, car }) > 0) {
+					collisionPairs.insert({ neighbor, car });
+				}
+				else {
+					collisionPairs.insert({car, neighbor});
+					collisionStartTimes[{car, neighbor}] = time;
+				}
+			}
+		}
+	}
 }
 
 void simulation_step() {
@@ -302,7 +328,10 @@ void simulation_step() {
 
 	// Record the collisions
 	double current_time = get_time_step_length() * get_current_time_step();
-	if (collision_file.is_open()) {
+	if (collision_file.is_open() && current_time > 1) {
+		for (int i = 0; i < get_all_ids_size(); i++){
+			determine_vehicle_collision(carsMap[allVehIDs[i]]);
+		}
 		std::set<std::tuple<Car*, Car*>> delete_pairs;
 		for (const auto& entry : collisionStartTimes) {
 			auto pair = entry.first;
@@ -432,18 +461,6 @@ void event_vehicle_exit(NumericalID veh_id, int has_arrived) {
 }
 
 void event_vehicles_collide(NumericalID veh_id1, NumericalID veh_id2) {
-	std::map<NumericalID, Car*>& carsMap = LFTStrategy::getCarsMap();
-	if (carsMap.size() > 0 && collision_file.is_open()) {
-		Car* car1 = carsMap[veh_id1];
-		Car* car2 = carsMap[veh_id2];
-		std::tuple<Car*, Car*> combination = std::make_tuple(car1, car2);
-		double time = get_time_step_length() * get_current_time_step();
-		collisionPairs.insert(combination);
-
-		if (collisionStartTimes.count(combination) == 0) {
-			collisionStartTimes[combination] = time;
-		}
-	}
 }
 
 void event_vehicle_out_of_bounds(NumericalID veh_id) {
