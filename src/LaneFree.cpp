@@ -228,7 +228,7 @@ void simulation_initialize() {
 	string collisions_path = gen_config["collisions_file"];
 	if (collisions_path.compare("") != 0) {
 		collision_file.open(collisions_path);
-		collision_file << "StartTime, EndTime,Vehicle1,Vehicle2\n";
+		collision_file << "StartTime,EndTime,Vehicle1,Vehicle2,Edge1,Edge2\n";
 	}
 
 	string trajectory_path = gen_config["trajectory_file"];
@@ -309,7 +309,8 @@ void simulation_step() {
 			if (collisionPairs.count(pair) == 0) {
 				double start_time = entry.second;
 				auto [car1, car2] = pair;
-				collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << "\n";
+				collision_file << start_time << "," << current_time << "," << car1->getVehName() << "," << car2->getVehName() << ","
+					<< car1->getCurrentEdgeName() << "," << car2->getCurrentEdgeName() << "\n";
 				delete_pairs.insert(pair);
 			}
 		}
