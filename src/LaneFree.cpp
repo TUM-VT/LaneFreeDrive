@@ -256,22 +256,22 @@ void simulation_initialize() {
 void determine_vehicle_collision(Car* car) {
 	double time = get_time_step_length() * get_current_time_step();
 	double l{ car->getLength() }, w{ car->getWidth() };
-	for (double neighbor_type : { 1, -1 }) {
-		std::vector<Car*> neighbors = car->getLFTStrategy()->getNeighbours(car, neighbor_type * car->getLength());
-		for (Car* neighbor : neighbors) {
-			double gap_x = std::abs(car->getRelativeDistanceX(neighbor)) - (neighbor->getLength() + l) / 2.0;
-			double gap_y = std::abs(car->getRelativeDistanceY(neighbor)) - (neighbor->getWidth() + w) / 2.0;
-			if (gap_x < 0 && gap_y < 0) {
-				if (collisionStartTimes.count({ car, neighbor }) > 0) {
-					collisionPairs.insert({ car, neighbor });
-				}
-				else if (collisionStartTimes.count({ neighbor, car }) > 0) {
-					collisionPairs.insert({ neighbor, car });
-				}
-				else {
-					collisionPairs.insert({car, neighbor});
-					collisionStartTimes[{car, neighbor}] = time;
-				}
+	std::vector<Car*> neighbors = car->getLFTStrategy()->getNeighbours(car, 2.0 * car->getLength());
+	for (Car* neighbor : neighbors) {
+		double g1 = car->getRelativeDistanceX(neighbor);
+		double g2 = car->getRelativeDistanceY(neighbor);
+		double gap_x = std::abs(car->getRelativeDistanceX(neighbor)) - (neighbor->getLength() + l) / 2.0;
+		double gap_y = std::abs(car->getRelativeDistanceY(neighbor)) - (neighbor->getWidth() + w) / 2.0;
+		if (gap_x < 0 && gap_y < 0) {
+			if (collisionStartTimes.count({ car, neighbor }) > 0) {
+				collisionPairs.insert({ car, neighbor });
+			}
+			else if (collisionStartTimes.count({ neighbor, car }) > 0) {
+				collisionPairs.insert({ neighbor, car });
+			}
+			else {
+				collisionPairs.insert({car, neighbor});
+				collisionStartTimes[{car, neighbor}] = time;
 			}
 		}
 	}
