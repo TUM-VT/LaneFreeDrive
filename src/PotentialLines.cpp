@@ -164,8 +164,6 @@ std::vector<Car*> PotentialLines::calculateLeader(Car* ego, std::vector<Car*> fr
 }
 
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
-	double vego = ego->getSpeedX();
-	double vl = leader->getSpeedX();
 	double a = ReactionTime * Deccelerate;
 	double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 	double radicand = a * a + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap);
@@ -175,7 +173,6 @@ double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 
 double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> leaders) {
 	double vego = ego->getSpeedX();
-	double time_step = get_time_step_length();
 	double ax{1000};
 	if (leaders.size() > 0) {
 		double vsafe = 1000;
@@ -190,13 +187,13 @@ double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> leaders) {
 		double diff_vel_x = vsafe - vego;
 		if (diff_vel_x < 0) {
 			ax = -std::min(std::abs(diff_vel_x / ReactionTime), Deccelerate);
-			// Check if the allowed deceleration is sufficient to make ego vehicle stop behind the leader if the leader uses more heavy brakes
+			// Check if the allowed deceleration is sufficient to reach safe speed without collision.
 			if (MaxBrakeDeceleration > 0) {
-				double vl = leader->getSpeedX();
-				double brake_distance = 0.5 * (pow(vego, 2) - pow(vl, 2)) / Deccelerate + MinSafeGap;
+				double brake_distance = 0.5 * pow(diff_vel_x, 2) / Deccelerate + MinSafeGap;
 				double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
 				if (brake_distance > gap) {
-					double req_ax = pow(vego, 2) / (2.0 * (gap - MinSafeGap) + pow(vl, 2) / MaxBrakeDeceleration);
+					// Use sufficient brake to stop behind the leader.
+					double req_ax = pow(vego, 2) / (2.0 * (gap - MinSafeGap) + pow(leader->getSpeedX(), 2) / MaxBrakeDeceleration);
 					ax = -std::min(std::abs(req_ax), MaxBrakeDeceleration);
 				}
 			}
