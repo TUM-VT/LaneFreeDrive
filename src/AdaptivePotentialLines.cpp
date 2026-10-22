@@ -48,7 +48,7 @@ void AdaptivePotentialLines::update() {
 	for (const auto& [key, car] : carsMap) {
 		follower_map[car] = nullptr;
 		std::vector<Car*> front_neighbors = getNeighbours(car, AdaptiveFollowerDistance);
-		leader_map_temp[car] = calculateLeader(car, front_neighbors);
+		leader_map_temp[car] = calculateLeader(car, front_neighbors, 1)[0];
 	}
 	for (const auto& [follower, leader] : leader_map_temp) {
 		if (leader != nullptr) {
@@ -274,7 +274,7 @@ double AdaptivePotentialLines::calculatePLForce(Car* ego) {
 				space_count += pl_space;
 				if (rel_line < space_count) {
 					double target_line = y1 + rel_line - passed_space;
-					Car* leader = leader_map[ego];
+					//Car* leader = leader_map[ego];
 					assigned_pl[ego] = target_line;
 					pl_force = apl_corridor_force_index * (target_line - ego->getY());
 					if (sync_file.is_open()) {

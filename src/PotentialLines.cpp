@@ -22,6 +22,7 @@ PotentialLines::PotentialLines(iniMap config): LFTStrategy(config) {
 	FrontDistnce = stod(secParam["FrontDistance"]);
 	BackDistance = stod(secParam["BackDistance"]);
 	ForceIndex = stod(secParam["ForceIndex"]);
+	leader_count = stoi(secParam["leader_count"]);
 	DesireVelocityFI = stod(secParam["DesireVelocityForceIndex"]);
 	PLBoundaryMargin = stod(secParam["PLBoundaryMargin"]);
 	PLBoundaryMarginOffsetX = stod(secParam["PLBoundaryMarginOffsetX"]);
@@ -87,7 +88,7 @@ void PotentialLines::update() {
 	assigned_pl.clear();
 	for (const auto& [key, car] : carsMap) {
 		std::vector<Car*> front_neighbors = getNeighbours(car, this->FrontDistnce);
-		leader_map[car] = calculateLeader(car, front_neighbors);
+		leader_map[car] = calculateLeader(car, front_neighbors, leader_count);
 	}
 }
 
@@ -115,8 +116,8 @@ std::tuple<double, double>  PotentialLines::calculateAcceleration(Car* ego) {
 	fy = controlRoadBoundary(ego, fy);
 
 	// Limit the x-axis acceleration according to safe velocity
-	Car* leader = leader_map[ego];
-	double ax_safe = calculateSafeAcc(ego, leader);
+	Car* leader = (leader_map[ego].size() > 0) ? leader_map[ego][0] : nullptr;
+	double ax_safe = calculateSafeAcc(ego, leader_map[ego]);
 	fx = std::min(fx, ax_safe);
 
 	if (ttc_file.is_open()) {
@@ -147,18 +148,19 @@ std::tuple<double, double> PotentialLines::calculateNeighbourForces(Car* ego, st
 	return std::make_tuple(totalFX, totalFy);
 }
 
-Car* PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors) {
-	Car* leader = nullptr;
+std::vector<Car*> PotentialLines::calculateLeader(Car* ego, std::vector<Car*> front_neighbors, double count) {
+	std::vector<Car*> leaders;
 	double step = get_time_step_length();
 	for (Car* car : front_neighbors) {
 		double lateral_distance = ego->getRelativeDistanceY(car) + step * (car->getSpeedY() - ego->getSpeedY());
 		if (std::abs(lateral_distance) <= (ego->getWidth() + car->getWidth()) / 2.0 + 0.05) {
-			leader = car;
-			break;
+			leaders.push_back(car);
+			if (leaders.size() >= count)
+				break;
 		}
 
 	}
-	return leader;
+	return leaders;
 }
 
 double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
@@ -171,12 +173,20 @@ double PotentialLines::calculateSafeVelocity(Car* ego, Car* leader) {
 	return vsafe;
 }
 
-double PotentialLines::calculateSafeAcc(Car* ego, Car* leader) {
+double PotentialLines::calculateSafeAcc(Car* ego, std::vector<Car*> leaders) {
 	double vego = ego->getSpeedX();
 	double time_step = get_time_step_length();
 	double ax{1000};
-	if (leader != nullptr) {
-		double vsafe = calculateSafeVelocity(ego, leader);
+	if (leaders.size() > 0) {
+		double vsafe = 1000;
+		Car* leader = leaders[0];
+		for (Car* lcar : leaders) {
+			double v = calculateSafeVelocity(ego, lcar);
+			if (v < vsafe) {
+				vsafe = v;
+			}
+		}
+
 		double diff_vel_x = vsafe - vego;
 		if (diff_vel_x < 0) {
 			ax = -std::min(std::abs(diff_vel_x / ReactionTime), Deccelerate);

@@ -17,6 +17,7 @@ protected:
 
 	double FrontDistnce;
 	double BackDistance;
+	int leader_count;
 	double ForceIndex, DesireVelocityFI;
 	double PLBoundaryMargin;
 	double PLBoundaryMarginOffsetX;
@@ -45,7 +46,7 @@ protected:
 
 	void vehicle_exit(Car* car) override;
 
-	std::map <Car*, Car*> leader_map;
+	std::map <Car*, std::vector<Car*>> leader_map;
 
 	std::map <Car*, double> assigned_pl;
 
@@ -61,9 +62,9 @@ protected:
 
 	double calculateSafeVelocity(Car* ego, Car* leader);
 
-	double calculateSafeAcc(Car* ego, Car* leader);
+	double calculateSafeAcc(Car* ego, std::vector<Car*> leaders);
 
-	Car* calculateLeader(Car* ego, std::vector<Car*> front_neighbors);
+	std::vector<Car*> calculateLeader(Car* ego, std::vector<Car*> front_neighbors, double count=1);
 
 	// Calculates new lateral accelerations such that the ego vehicle does not cross road boundary 
 	double controlRoadBoundary(Car* ego, double ay);
