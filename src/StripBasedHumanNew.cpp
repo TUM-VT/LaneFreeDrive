@@ -139,7 +139,6 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 		off_ramp_desire_mid_point = stod(secParam["off_ramp_desire_mid_point"]);
 	}
 	off_ramp_desire_spread = stod(secParam["off_ramp_desire_spread"]);
-	off_ramp_desire_lambda = stod(secParam["off_ramp_desire_lambda"]);
 	std::vector<string> on_ramp_distaces = splitString(secParam["on_ramp_desire_distance"], ",");
 	if (on_ramp_distaces.size() > 1) {
 		on_ramp_desire_distance = std::nan("");
