@@ -103,6 +103,18 @@ void StripBasedHumanNew::update() {
 		if (car->getLFTStrategy() == this) {
 			network_strips.update(car);
 		}
+		if (std::isnan(ReactionTime)) {
+			if (ReactionTimesMap.find(car) == ReactionTimesMap.end()) {
+				double rt = -1;
+				while (rt < 0) {
+					rt = std::clamp(reaction_distribution(rng), reaction_distribution.mean() - 3.0 * reaction_distribution.stddev(), reaction_distribution.mean() + 3.0 * reaction_distribution.stddev());
+					if (rt < 0) {
+						std::cout << "\nNegative Reaction Time " << rt << " drew from the distribution for Human driver " << car->getVehName() << " .Trying again.";
+					}
+				}
+				ReactionTimesMap[car] = rt;
+			}
+		}
 	}
 	
 }
@@ -167,16 +179,7 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 }
 
 double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double gap) {
-	double reaction_time = ReactionTime;
-	if (std::isnan(ReactionTime)) {
-		if (ReactionTimesMap.find(ego) == ReactionTimesMap.end()) {
-			reaction_time = reaction_distribution(rng);
-			ReactionTimesMap[ego] = reaction_time;
-		}
-		else {
-			reaction_time = ReactionTimesMap[ego];
-		}
-	}
+	double reaction_time = std::isnan(ReactionTime) ? ReactionTimesMap[ego]: ReactionTime;
 	double a = reaction_time * Deccelerate;
 	double radicand = a * a + pow(leader->getSpeedX(), 2) + 2 * Deccelerate * (gap - MinSafeGap);
 	double vsafe = std::max(0.0, -a + sqrt(std::max(0.0, radicand)));
