@@ -284,7 +284,7 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 				}
 				mid_point = off_ramp_midpoint_map[ego];
 			}
-			double benefit = 1 / (1 + std::exp(off_ramp_desire_lambda * (dist_to_off_ramp - mid_point) / off_ramp_desire_spread));
+			double benefit = 1 / (1 + std::exp((dist_to_off_ramp - mid_point) / off_ramp_desire_spread));
 			double lateral_ratio = ego->getY() / (network_strips.getBoundaryWidth(ego) - ego->getWidth());
 			benefit = LaneChangeThreshold * lateral_ratio * benefit;
 			right += benefit;
