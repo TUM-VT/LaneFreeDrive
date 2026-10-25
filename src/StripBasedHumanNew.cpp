@@ -162,6 +162,7 @@ StripBasedHumanNew::StripBasedHumanNew(iniMap config): LFTStrategy(config) {
 	}
 	StripWidth = stod(secParam["StripWidth"]);
 	FrontDistance = stod(secParam["FrontDistance"]);
+	num_leader = stoi(secParam["leader_count"]);
 	Deccelerate = stod(secParam["Deceleration"]);
 	MaxBrakeDeceleration = stod(secParam["MaxBrakeDeceleration"]);
 	Accelerate = stod(secParam["Acceleration"]);
@@ -186,19 +187,22 @@ double StripBasedHumanNew::calculateSafeVelocity(Car* ego, Car* leader, double g
 	return vsafe;
 }
 
-Car* StripBasedHumanNew::calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors, double next_y) {
-	Car* leader = nullptr;
+std::vector<Car*> StripBasedHumanNew::calculateLeader(Car* ego, std::vector<Car*> neighbors, double next_y, int count) {
+	std::vector<Car*> leaders;;
+	double step = get_time_step_length();
 	double delta_y = 0;
 	if (!std::isnan(next_y)) 
 		delta_y = next_y - ego->getY();
 	for (Car* car : neighbors) {
-		double lateral_distance = std::abs(ego->getRelativeDistanceY(car) - delta_y);
+		double delta_y_neighbor = car->getSpeedY() * step;
+		double lateral_distance = std::abs(ego->getRelativeDistanceY(car) - delta_y + delta_y_neighbor);
 		if (lateral_distance <= (ego->getWidth() + car->getWidth()) / 2.0 + lateral_overlap_buffer) {
-			leader = car;
-			break;
+			leaders.push_back(car);
+			if (leaders.size() >= count)
+				break;
 		}
 	}
-	return leader;
+	return leaders;
 }
 
 std::unordered_map<int, tuple<double, Car*>> StripBasedHumanNew::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
@@ -339,8 +343,9 @@ void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<i
 bool StripBasedHumanNew::isSufficientGap(Car* ego, double x, double y, vector<Car*> neighbours, bool are_front_neighbours) {
 
 	bool sufficient_gap = true;
-	Car* overlap_car = calculateFirstLateralOverlap(ego, neighbours, y);
-	if (overlap_car != nullptr) {
+	std::vector<Car*> overlap_cars = calculateLeader(ego, neighbours, y, 1);
+	if (overlap_cars.size() > 0) {
+		Car* overlap_car = overlap_cars[0];
 		double diff_vel_x = ego->getSpeedX() - overlap_car->getSpeedX();
 		double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
 		double gap;
@@ -365,36 +370,42 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	vector<Car*> back_cars = getNeighbours(ego, -FrontDistance);
 
 	/* Calculate the longitudinal acceleration */
+
+	std::vector<Car*> leaders;
+	std::vector<Car*> normal_leaders = calculateLeader(ego, front_cars, nan(""), num_leader);
+	for (Car* c : normal_leaders)
+		leaders.push_back(c);
+
 	double desired_speed = ego->getDesiredSpeed();
 	double time_step = get_time_step_length();
-
-	Car* leader = calculateFirstLateralOverlap(ego, front_cars);
-	double vsafe_x{ desired_speed }, gap;
-	if (leader != nullptr) {
-		gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
-		vsafe_x = calculateSafeVelocity(ego, leader, gap);
-		if (std::isnan(vsafe_x)) {
-			vsafe_x = 0;
+	double accelerate = Accelerate * (1 - std::pow(ego->getSpeedX() / ego->getDesiredSpeed(), 4));
+	double vsafe_x{ desired_speed }, safe_ax{ 1000 }, vx{ ego->getSpeedX() };
+	if (leaders.size() > 0) {
+		double reaction_time = std::isnan(ReactionTime) ? ReactionTimesMap[ego] : ReactionTime;
+		Car* leader = leaders[0];
+		for (Car* lcar : leaders) {
+			double gap = ego->getRelativeDistanceX(lcar) - lcar->getLength() / 2.0 - ego->getLength() / 2.0;
+			double vs = calculateSafeVelocity(ego, lcar, gap);
+			if (vs < vsafe_x) {
+				vsafe_x = vs;
+			}
 		}
-	};
-	double max_vel_x = ego->getSpeedX() + time_step * Accelerate;		// The max velocity possible in the next time step
-	double next_vel_x = std::min({ vsafe_x, desired_speed, max_vel_x });
-	
-	double diff_vel_x = next_vel_x - ego->getSpeedX();
-	double ax = 0;
-	if (diff_vel_x < 0) {
-		ax = -std::min(std::abs(diff_vel_x / time_step), Deccelerate);
-		// Check if the allowed deceleration is sufficient to reach the desired speed with given normal deceleration
-		if (leader != nullptr) {
-			double brake_distance = pow(diff_vel_x, 2) / (2 * Deccelerate) + MinSafeGap;
-			if (gap < brake_distance) {
-				ax = -std::min({ std::abs(diff_vel_x / time_step), MaxBrakeDeceleration });
+
+		safe_ax = std::max((vsafe_x - vx) / reaction_time, -Deccelerate);
+		if (safe_ax < 0) {
+			// Check if the allowed deceleration is sufficient to make ego vehicle acquire vsafe behind the leader, otherwise use higher deceleration
+			if (MaxBrakeDeceleration > 0) {
+				double brake_distance = 0.5 * pow(vsafe_x - vx, 2) / Deccelerate + MinSafeGap;
+				double gap = ego->getRelativeDistanceX(leader) - leader->getLength() / 2.0 - ego->getLength() / 2.0;
+				if (brake_distance > gap) {
+					double req_ax = pow(vx, 2) / (2.0 * (gap - MinSafeGap) + pow(leader->getSpeedX(), 2) / MaxBrakeDeceleration);
+					// std::cout << "\n" << ego->getVehName() << "\t" << leader->getVehName() << "\told_acc: " << safe_ax << "\tnew_acc: " << req_ax;
+					safe_ax = -std::min(std::abs(req_ax), MaxBrakeDeceleration);
+				}
 			}
 		}
 	}
-	else {
-		ax = std::min(diff_vel_x / time_step, Accelerate);
-	}
+	double ax = std::min(accelerate, safe_ax);
 
 	std::unordered_map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
 

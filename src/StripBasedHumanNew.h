@@ -55,6 +55,7 @@ private:
 	double MinSafeGap;
 	double StripWidth;
 	double FrontDistance;
+	int num_leader;
 	double LaneChangeThreshold;
 	double Lambda;
 	double numStripsConsidered;
@@ -72,7 +73,7 @@ private:
 
 	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
-	Car* calculateFirstLateralOverlap(Car* ego, std::vector<Car*> neighbors, double next_y= std::nan(""));
+	std::vector<Car*> calculateLeader(Car* ego, std::vector<Car*> neighbors, double next_y= std::nan(""), int count=1);
 
 	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
 
