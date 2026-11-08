@@ -41,7 +41,7 @@ map<string, std::tuple<double, double>> initial_positions;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
 std::string lateral_speed_file;
-map<Car*, double> abs_lateral_speeds;
+map<std::string, map<std::string, std::vector<double>>> abs_lateral_speeds;
 std::mt19937 speed_rand;
 
 iniMap readConfigFile(char* file_name) {
@@ -288,7 +288,7 @@ void simulation_step() {
 			Car* car = new Car(numID, config, strategies);
 			carsMap[numID] = car;
 			used_strategies.insert(car->getLFTStrategy());
-			abs_lateral_speeds[car] = 0.0;
+			abs_lateral_speeds[car->getVehName()] = std::map<std::string, std::vector<double>>();
 		}
 		carsMap[numID]->update();
 	}
@@ -300,16 +300,20 @@ void simulation_step() {
 
 	// Apply the acceleration
 	allVehIDs = get_all_ids();
+	double time = get_time_step_length() * get_current_time_step();
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
 		Car* car = carsMap[numID];
-		abs_lateral_speeds[car] += std::abs(car->getSpeedY());
+		if (abs_lateral_speeds[car->getVehName()].count(car->getCurrentEdgeName()) == 0) {
+			abs_lateral_speeds[car->getVehName()][car->getCurrentEdgeName()] = {time, 0, 0 };
+		}
+		abs_lateral_speeds[car->getVehName()][car->getCurrentEdgeName()][1] += 1;
+		abs_lateral_speeds[car->getVehName()][car->getCurrentEdgeName()][2] += std::abs(car->getSpeedY());
 		double old_accx = car->getAccX();
 		double old_accy = car->getAccY();
 		auto[ax, ay] = car->applyAcceleration();
 		// Record the trajectory for car
 		if (trajectory_file.is_open()) {
-			double time = get_time_step_length() * get_current_time_step();
 			double jerk_x = (ax - old_accx) / get_time_step_length();
 			double jerk_y = (ay - old_accy) / get_time_step_length();
 			double pl = 0;
@@ -380,10 +384,19 @@ void simulation_finalize() {
 	if (lateral_speed_file.compare("") != 0) {
 		std::ofstream speed_file;
 		speed_file.open(lateral_speed_file);
-		speed_file << "Vehicle,mean_lateral_speed\n";
-		for (const auto& [car, speed] : abs_lateral_speeds) {
-			double mean_speed = speed / get_current_time_step();
-			speed_file << car->getVehName() << "," << mean_speed << "\n";
+		speed_file << "Vehicle,edge,start_time,end_time,mean_lateral_speed\n";
+		for (const auto& [car_name, edge_map] : abs_lateral_speeds) {
+			double total_count{ 0 }, total_speed{ 0 };
+			for (const auto& [edge, speeds] : edge_map) {
+				total_count += speeds[1];
+				total_speed += speeds[2];
+				double end_time = speeds[0] + get_time_step_length() * speeds[1];
+				double mean_speed = speeds[2] / speeds[1];
+				speed_file << car_name << "," << edge << "," << speeds[0] << "," << end_time << "," << mean_speed << "\n";
+			}
+			double total_mean_speed = total_speed / total_count;
+			double end_time = edge_map.begin()->second[0] + get_time_step_length() * total_count;
+			speed_file << car_name << ",Total," << edge_map.begin()->second[0] << "," << end_time << "," << total_mean_speed << "\n";
 		}
 		speed_file.close();
 	}
