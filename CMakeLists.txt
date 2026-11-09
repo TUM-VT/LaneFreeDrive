@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 3.12)
 project(lanefreeplugin)
 set(CMAKE_BUILD_TYPE Debug)
 if(WIN32)
@@ -15,6 +15,7 @@ file(GLOB SOURCES "src/*.cpp")
 
 #output library export file *.lib and
 #output macro definitions include file
+find_package(ZLIB REQUIRED)
 if(WIN32)
 	include (GenerateExportHeader)
 	#Generate the shared library from the sources
@@ -28,12 +29,14 @@ if(WIN32)
 	target_compile_features(libLaneFreePlugin PRIVATE cxx_std_17)
 	find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 	target_include_directories(libLaneFreePlugin PRIVATE ${SIMPLEINI_INCLUDE_DIRS})
+	target_link_libraries(libLaneFreePlugin PRIVATE ZLIB::ZLIB)
 else()
 	#Generate the shared library from the sources (linux automatically assigns a lib at the beginning of the library)
 	add_library(LaneFreePlugin SHARED ${SOURCES})
 	target_compile_features(LaneFreePlugin PRIVATE cxx_std_17)
 	find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 	target_include_directories(LaneFreePlugin PRIVATE ${SIMPLEINI_INCLUDE_DIRS})
+	target_link_libraries(LaneFreePlugin PRIVATE ZLIB::ZLIB)
 endif()
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/lft_plugin_config_files/config.ini")

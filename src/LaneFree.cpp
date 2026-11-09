@@ -12,6 +12,8 @@
 #include <regex>
 #include <random>
 #include <fstream>
+#include <zlib.h>
+#include <sstream>
 #include "Controller.h"
 #include "PotentialLines.h"
 #include "AdaptivePotentialLines.h"
@@ -36,7 +38,7 @@ map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
 std::ofstream collision_file;
-std::ofstream trajectory_file;
+gzFile trajectory_file = nullptr;
 map<string, std::tuple<double, double>> initial_positions;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
 std::set<std::tuple<Car*, Car*>> collisionPairs;
@@ -231,10 +233,10 @@ void simulation_initialize() {
 		collision_file << "StartTime,EndTime,Vehicle1,Vehicle2,Edge1,Edge2\n";
 	}
 
-	string trajectory_path = gen_config["trajectory_file"];
+	string trajectory_path = gen_config["trajectory_file"] + ".gz";
 	if (trajectory_path.compare("") != 0) {
-		trajectory_file.open(trajectory_path);
-		trajectory_file << "Time,Vehicle1,x,y,speed_x,speed_y,acceleration_x,acceleration_y,jerk_x,jerk_y,potential_line\n";
+		trajectory_file = gzopen(trajectory_path.c_str(), "wb3");
+		gzputs(trajectory_file, "Time,Vehicle,edge,x,y,speed_x,speed_y,acceleration_x,acceleration_y,jerk_x,jerk_y,potential_line\n");
 	}
 	lateral_speed_file = gen_config["lateral_speed_file"];
 
@@ -301,6 +303,7 @@ void simulation_step() {
 	// Apply the acceleration
 	allVehIDs = get_all_ids();
 	double time = get_time_step_length() * get_current_time_step();
+	std::ostringstream row;
 	for (int i = 0; i < get_all_ids_size(); i++) {
 		NumericalID numID = allVehIDs[i];
 		Car* car = carsMap[numID];
@@ -313,16 +316,21 @@ void simulation_step() {
 		double old_accy = car->getAccY();
 		auto[ax, ay] = car->applyAcceleration();
 		// Record the trajectory for car
-		if (trajectory_file.is_open()) {
+		if (trajectory_file != nullptr) {
+			auto [x, y] = car->getGlobalPosition();
 			double jerk_x = (ax - old_accx) / get_time_step_length();
 			double jerk_y = (ay - old_accy) / get_time_step_length();
 			double pl = 0;
 			if (car->getLFTStrategy() == strategies["PotentialLines"] || car->getLFTStrategy() == strategies["AdaptivePotentialLines"]) {
 				pl = ((PotentialLines*)car->getLFTStrategy())->getAssignedPL(car);
 			}
-			trajectory_file << time << "," << car->getVehName() << "," << std::fixed << std::setprecision(2) 
-				<< car->getX() << "," << car->getY() << "," << car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "," << jerk_x << "," <<jerk_y << "," << pl << std::endl;
+			row << time << "," << car->getVehName() << "," << car->getCurrentEdgeName() << "," << std::fixed << std::setprecision(2) << x << "," << y << ","
+				<< car->getSpeedX() << "," << car->getSpeedY() << "," << ax << "," << ay << "," << jerk_x << "," << jerk_y << "," << pl << "\n";
 		}
+	}
+	if (trajectory_file != nullptr) {
+		std::string data = row.str();
+		gzwrite(trajectory_file, data.data(), static_cast<unsigned int>(data.size()));
 	}
 
 	// Finish the time step
@@ -378,8 +386,9 @@ void simulation_finalize() {
 	if (collision_file.is_open()) {
 		collision_file.close();
 	}
-	if (trajectory_file.is_open()) {
-		trajectory_file.close();
+	if (trajectory_file != nullptr) {
+		gzclose(trajectory_file);
+		trajectory_file = nullptr;
 	}
 	if (lateral_speed_file.compare("") != 0) {
 		std::ofstream speed_file;
