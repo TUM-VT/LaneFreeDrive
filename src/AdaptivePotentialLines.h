@@ -23,7 +23,7 @@ protected:
 	std::ofstream sync_file;
 	std::string syncfile_name;
 	std::string python_margin_filename;
-	std::map<std::string, double> python_margin_map;
+	std::map<std::string, double> python_margin_map, apl_force_index_map;
 
 	void update() override;
 

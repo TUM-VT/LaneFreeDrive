@@ -62,11 +62,13 @@ void AdaptivePotentialLines::update() {
 		std::ifstream file(python_margin_filename);
 		if (file.is_open()) {
 			python_margin_map.clear();
+			apl_force_index_map.clear();
 			std::string line;
 			while (std::getline(file, line)) {
 				auto line_vector = splitString(line, ",");
 				if (line_vector[0].compare("") != 0) {
 					python_margin_map[line_vector[0]] = std::stod(line_vector[1]);
+					apl_force_index_map[line_vector[0]] = std::stod(line_vector[2]);
 				}
 			}
 			file.close();
@@ -274,9 +276,9 @@ double AdaptivePotentialLines::calculatePLForce(Car* ego) {
 				space_count += pl_space;
 				if (rel_line < space_count) {
 					double target_line = y1 + rel_line - passed_space;
-					//Car* leader = leader_map[ego];
 					assigned_pl[ego] = target_line;
-					pl_force = apl_corridor_force_index * (target_line - ego->getY());
+					double apl_force = apl_force_index_map[ego->getVehName()];
+					pl_force = apl_force * (target_line - ego->getY());
 					if (sync_file.is_open()) {
 						sync_file << get_current_time_step() << "," << ego->getVehName() << "," << "Y" << ","
 							<< x1 << "," << x2 << "," << target_line << "\n";
