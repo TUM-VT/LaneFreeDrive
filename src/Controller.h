@@ -79,7 +79,9 @@ public:
 	double getCurrentEdgeWidth();
 	double getCurrentEdgeLength();
 	bool getIfOnRampVeh() { return isOnRampVeh; }
+	bool getIfOnRampEdge();
 	bool getIfOffRampVeh() { return isOffRampVeh; }
+	bool getIfOffRampEdge();
 
 	NumericalID getCurrentEdge() { return currentEdge; }
 	std::string getCurrentEdgeName();

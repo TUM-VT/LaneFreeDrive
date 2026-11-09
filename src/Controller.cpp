@@ -248,6 +248,30 @@ double Car::calRampDistance(bool measure_remaining_dist){
 	return distance;
 }
 
+bool Car::getIfOffRampEdge() {
+	std::string current_edge = getCurrentEdgeName();
+	bool is_off_ramp_edge = false;
+	for (std::string edge : lftstrategy->getOffRampEdges()) {
+		if (current_edge.compare(edge) == 0) {
+			is_off_ramp_edge = true;
+			break;
+		}
+	}
+	return is_off_ramp_edge;
+}
+
+bool Car::getIfOnRampEdge() {
+	std::string current_edge = getCurrentEdgeName();
+	bool is_on_ramp_edge = false;
+	for (std::string edge : lftstrategy->getOnRampEdges()) {
+		if (current_edge.compare(edge) == 0) {
+			is_on_ramp_edge = true;
+			break;
+		}
+	}
+	return is_on_ramp_edge;
+}
+
 bool Car::isOnAccLane() {
 	int acc_lane = am_i_on_acceleration_lane(numID);
 	if (acc_lane == 1) return true;

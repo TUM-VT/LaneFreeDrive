@@ -35,7 +35,7 @@ protected:
 
 	void buildHumanOccupiedMap();
 
-	std::map<double, double> calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double edge_width);
+	std::map<double, double> calculateAvailableLateralFromOccupied(std::map<double, double> lateral, double lower_bound, double upper_bound);
 
 	double calculateSurroundingSpeed(Car* car);
 
