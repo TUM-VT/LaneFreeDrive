@@ -38,6 +38,7 @@ map<string, LFTStrategy*> strategies;
 std::unordered_set<LFTStrategy*> used_strategies;
 iniMap config;
 std::ofstream collision_file;
+std::ofstream vehicle_info_file;
 gzFile trajectory_file = nullptr;
 map<string, std::tuple<double, double>> initial_positions;
 map<std::tuple<Car*, Car*>, double> collisionStartTimes;
@@ -281,6 +282,16 @@ void determine_vehicle_collision(Car* car) {
 
 void simulation_step() {
 
+	// File to store the desired speed and initial positions of the vehicles
+	if (get_current_time_step() == 1) {
+		auto gen_config = config["General Parameters"];
+		string vehicle_info_path = gen_config["vehicle_info_file"];
+		if (vehicle_info_path.compare("") != 0) {
+			vehicle_info_file.open(vehicle_info_path);
+			vehicle_info_file << "Vehicle,edge,desired_speed,initial_x,initial_y\n";
+		}
+	}
+
 	NumericalID* allVehIDs = get_all_ids();
 	std::map<NumericalID, Car*>& carsMap = LFTStrategy::getCarsMap();
 	// Update the vehicle class instances
@@ -289,10 +300,17 @@ void simulation_step() {
 		if (carsMap.count(numID) == 0) {
 			Car* car = new Car(numID, config, strategies);
 			carsMap[numID] = car;
+			car->update();
 			used_strategies.insert(car->getLFTStrategy());
 			abs_lateral_speeds[car->getVehName()] = std::map<std::string, std::vector<double>>();
+			if (vehicle_info_file.is_open()) {
+				auto [x, y] = car->getGlobalPosition();
+				vehicle_info_file << car->getVehName() << "," << car->getCurrentEdgeName() << "," << std::fixed << std::setprecision(2) << car->getDesiredSpeed() << "," << x << "," << y << "\n";
+			}
 		}
-		carsMap[numID]->update();
+		else {
+			carsMap[numID]->update();
+		}
 	}
 
 	// Update the strategies
@@ -360,31 +378,14 @@ void simulation_step() {
 		}
 		collisionPairs.clear();
 	}
-
-	// Record the vehicle information in the first time step
-
-	if (get_current_time_step() == 1) {
-		auto gen_config = config["General Parameters"];
-		string vehicle_info_path = gen_config["vehicle_info_file"];
-		if (vehicle_info_path.compare("") != 0) {
-			std::ofstream vehicle_info_file;
-			vehicle_info_file.open(vehicle_info_path);
-			vehicle_info_file << "Vehicle,desired_speed,initial_x,initial_y\n";
-			for (const auto& entry : carsMap) {
-				Car* car = entry.second;
-				string veh_name = car->getVehName();
-				double desired_speed = car->getDesiredSpeed();
-				auto [x, y] = initial_positions[veh_name];
-				vehicle_info_file << veh_name << "," << desired_speed << "," << x << "," << y << "\n";
-			}
-			vehicle_info_file.close();
-		}
-	}
 }
 
 void simulation_finalize() {
 	if (collision_file.is_open()) {
 		collision_file.close();
+	}
+	if (vehicle_info_file.is_open()) {
+		vehicle_info_file.close();
 	}
 	if (trajectory_file != nullptr) {
 		gzclose(trajectory_file);
