@@ -205,7 +205,7 @@ std::vector<Car*> StripBasedHumanNew::calculateLeader(Car* ego, std::vector<Car*
 	return leaders;
 }
 
-std::unordered_map<int, tuple<double, Car*>> StripBasedHumanNew::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
+std::vector<std::pair<double, Car*>> StripBasedHumanNew::calculateSafeVelocities(Car* ego, vector<Car*> front_cars) {
 
 	int edge_strips_count = network_strips.getStripsCount(ego);
 	int ego_lw_strip = network_strips.getAssignedStripInx(ego);
@@ -213,11 +213,7 @@ std::unordered_map<int, tuple<double, Car*>> StripBasedHumanNew::calculateSafeVe
 	int numocc = ego_up_strip - ego_lw_strip;
 	int count_indices = 0;
 
-	std::unordered_map<int, tuple<double, Car*>> safe_velocity_map;
-	safe_velocity_map.reserve(edge_strips_count);
-	for (int i = 0; i < edge_strips_count; i++) {
-		safe_velocity_map[i] = std::make_tuple(std::nan(""), nullptr);
-	}
+	std::vector<std::pair<double, Car*>> safe_velocity_map(edge_strips_count,{ std::nan(""), nullptr });
 
 	for (Car* car : front_cars) {
 		int car_lw_inx = network_strips.getInxFromY(ego, car->getY() - car->getWidth() / 2.0);
@@ -234,19 +230,19 @@ std::unordered_map<int, tuple<double, Car*>> StripBasedHumanNew::calculateSafeVe
 		}
 
 		for (int k = overlap_lower; k <= overlap_upper; k++) {
-			if (std::get<1>(safe_velocity_map[k]) == nullptr) {
+			if (safe_velocity_map[k].second == nullptr) {
 				count_indices++;
-				safe_velocity_map[k] = std::make_tuple(safe_vel, car);
+				safe_velocity_map[k] = { safe_vel, car };
 			}
 		}
-		if (count_indices == edge_strips_count) {
+		if (count_indices >= edge_strips_count) {
 			break;
 		}
 	}
 	return safe_velocity_map;
 }
 
-void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::unordered_map<int, tuple<double, Car*>> safeVelMap, double vsafe_current) {
+void StripBasedHumanNew::updateStripChangeBenefit(Car* ego, std::vector<std::pair<double, Car*>> safeVelMap, double vsafe_current) {
 	int total_strips = network_strips.getStripsCount(ego);
 	int current_strip = network_strips.getAssignedStripInx(ego);
 	int upper_current_strip = network_strips.getInxFromY(ego, ego->getY() + ego->getWidth() / 2.0) + 1;
@@ -407,7 +403,7 @@ tuple<double, double> StripBasedHumanNew::calculateAcceleration(Car* ego) {
 	}
 	double ax = std::min(accelerate, safe_ax);
 
-	std::unordered_map<int, tuple<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
+	std::vector<std::pair<double, Car*>> safe_vel_map = calculateSafeVelocities(ego, front_cars);
 
 	/* Calculate lateral acceleration */
 	updateStripChangeBenefit(ego, safe_vel_map, vsafe_x);

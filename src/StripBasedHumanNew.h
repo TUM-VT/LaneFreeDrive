@@ -71,11 +71,11 @@ private:
 	std::map<Car*, double> off_ramp_midpoint_map, on_ramp_desire_dist_map, on_ramp_covered_lat_dist;
 	NetworkStrips network_strips;
 
-	std::unordered_map<int, std::tuple<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
+	std::vector<std::pair<double, Car*>> calculateSafeVelocities(Car* ego, std::vector<Car*> front_cars);
 
 	std::vector<Car*> calculateLeader(Car* ego, std::vector<Car*> neighbors, double next_y= std::nan(""), int count=1);
 
-	void updateStripChangeBenefit(Car* ego, std::unordered_map<int, std::tuple<double, Car*>> safeVelMap, double vsafe_current);
+	void updateStripChangeBenefit(Car* ego, std::vector<std::pair<double, Car*>> safeVelMap, double vsafe_current);
 
 	bool isSufficientGap(Car* ego, double x, double y, std::vector<Car*> neighbours, bool are_front_neighbours);
 
